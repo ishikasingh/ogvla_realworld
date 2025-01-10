@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+service FrankaService{
+    // RPC to start the robot
+    rpc Start (Empty) returns (Result);
+
+    // RPC to stop the robot
+    rpc Stop (Empty) returns (Result);
+
+    rpc GetJointPositions(Empty) returns (JointPositions);
+
+    rpc GetEndEffectorPose(Empty) returns (Pose);
+
+    rpc MoveToJointPositions(JointPositions) returns (Result);
+
+    rpc MoveToEndEffectorPose(Pose) returns (Result);
+}
+
+
+message Empty {}
+
+message JointPositions {
+    repeated float positions = 1;
+}
+
+message Pose {
+    repeated float pose = 1; // xyz and rpy
+}
+
+
+
+message Result {
+    oneof result {
+        Ok ok = 1;
+        Err err = 2;
+    }
+}
+
+message Ok {}
+
+
+message Err {
+    string message = 1;
+}
