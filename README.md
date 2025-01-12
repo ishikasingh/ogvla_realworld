@@ -13,4 +13,4 @@
 
 ## TODO
 
-- [ ] franka arm + franka gripper. 因为franka arm + allegro hand老代码库已经支持了，这是需要的第一个新功能。而且它仅依赖deoxys。话说,deoxys已经是server-client架构了，不过deoxys要system-wide安装傻逼3.13.0版本的protobuf，而且为了接口的统一性，就糊一层吧。
+- [ ] franka arm + franka gripper. 因为franka arm + allegro hand老代码库已经支持了，这是需要的第一个新功能。而且它仅依赖deoxys

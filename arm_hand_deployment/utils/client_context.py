@@ -6,9 +6,9 @@ from loguru import logger
 
 
 @contextmanager
-def robot_client_context(server_ip: str, port: int):
+def robot_client_context(server_ip: str, port: int, client_cls):
     channel = grpc.insecure_channel(f"{server_ip}:{port}")
-    client = Client(channel)
+    client: Client = client_cls(channel)
 
     try:
         assert client.Start(), "Failed to start client"

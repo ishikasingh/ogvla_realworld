@@ -51,3 +51,14 @@ class FrankaClient(Client):
         else:
             logger.error(f"Error: {result.err.message}")
             return False
+
+    def SetGripperAction(self, action: float) -> bool:
+        assert -1.0 <= action <= 1.0
+        result = self._stub.SetGripperAction(
+            service_pb2.GripperAction(value=action))
+
+        if result.HasField("ok"):
+            return True
+        else:
+            logger.error(f"Error: {result.err.message}")
+            return False

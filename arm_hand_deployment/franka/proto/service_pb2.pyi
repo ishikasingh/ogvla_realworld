@@ -21,6 +21,12 @@ class Pose(_message.Message):
     pose: _containers.RepeatedScalarFieldContainer[float]
     def __init__(self, pose: _Optional[_Iterable[float]] = ...) -> None: ...
 
+class GripperAction(_message.Message):
+    __slots__ = ("value",)
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    value: float
+    def __init__(self, value: _Optional[float] = ...) -> None: ...
+
 class Result(_message.Message):
     __slots__ = ("ok", "err")
     OK_FIELD_NUMBER: _ClassVar[int]

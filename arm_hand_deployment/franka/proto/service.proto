@@ -14,6 +14,8 @@ service FrankaService{
     rpc MoveToJointPositions(JointPositions) returns (Result);
 
     rpc MoveToEndEffectorPose(Pose) returns (Result);
+
+    rpc SetGripperAction(GripperAction) returns (Result);
 }
 
 
@@ -27,6 +29,10 @@ message Pose {
     repeated float pose = 1; // xyz and rpy
 }
 
+
+message GripperAction{
+    float value = 1;
+}
 
 
 message Result {
