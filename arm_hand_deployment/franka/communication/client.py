@@ -62,3 +62,17 @@ class FrankaClient(Client):
         else:
             logger.error(f"Error: {result.err.message}")
             return False
+
+    def ControllDeltaEndEffectorPose(self, action: np.ndarray) -> bool:
+        """
+        action: (6,) delta xyz+delta rpy
+        """
+
+        result = self._stub.ControllDeltaEndEffectorPose(
+            service_pb2.DeltaPose(delta_pose=action))
+
+        if result.HasField("ok"):
+            return True
+        else:
+            logger.error(f"Error: {result.err.message}")
+            return False

@@ -69,6 +69,11 @@ class FrankaServiceStub(object):
                 request_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.GripperAction.SerializeToString,
                 response_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
                 _registered_method=True)
+        self.ControllDeltaEndEffectorPose = channel.unary_unary(
+                '/FrankaService/ControllDeltaEndEffectorPose',
+                request_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.DeltaPose.SerializeToString,
+                response_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
+                _registered_method=True)
 
 
 class FrankaServiceServicer(object):
@@ -118,6 +123,12 @@ class FrankaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ControllDeltaEndEffectorPose(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_FrankaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -154,6 +165,11 @@ def add_FrankaServiceServicer_to_server(servicer, server):
             'SetGripperAction': grpc.unary_unary_rpc_method_handler(
                     servicer.SetGripperAction,
                     request_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.GripperAction.FromString,
+                    response_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.SerializeToString,
+            ),
+            'ControllDeltaEndEffectorPose': grpc.unary_unary_rpc_method_handler(
+                    servicer.ControllDeltaEndEffectorPose,
+                    request_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.DeltaPose.FromString,
                     response_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.SerializeToString,
             ),
     }
@@ -345,6 +361,33 @@ class FrankaService(object):
             target,
             '/FrankaService/SetGripperAction',
             arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.GripperAction.SerializeToString,
+            arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ControllDeltaEndEffectorPose(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/FrankaService/ControllDeltaEndEffectorPose',
+            arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.DeltaPose.SerializeToString,
             arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
             options,
             channel_credentials,

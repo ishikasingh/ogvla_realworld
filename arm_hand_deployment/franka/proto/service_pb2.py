@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n.arm_hand_deployment/franka/proto/service.proto\"\x07\n\x05\x45mpty\"#\n\x0eJointPositions\x12\x11\n\tpositions\x18\x01 \x03(\x02\"\x14\n\x04Pose\x12\x0c\n\x04pose\x18\x01 \x03(\x02\"\x1e\n\rGripperAction\x12\r\n\x05value\x18\x01 \x01(\x02\":\n\x06Result\x12\x11\n\x02ok\x18\x01 \x01(\x0b\x32\x03.OkH\x00\x12\x13\n\x03\x65rr\x18\x02 \x01(\x0b\x32\x04.ErrH\x00\x42\x08\n\x06result\"\x04\n\x02Ok\"\x16\n\x03\x45rr\x12\x0f\n\x07message\x18\x01 \x01(\t2\x9d\x02\n\rFrankaService\x12\x18\n\x05Start\x12\x06.Empty\x1a\x07.Result\x12\x17\n\x04Stop\x12\x06.Empty\x1a\x07.Result\x12,\n\x11GetJointPositions\x12\x06.Empty\x1a\x0f.JointPositions\x12#\n\x12GetEndEffectorPose\x12\x06.Empty\x1a\x05.Pose\x12\x30\n\x14MoveToJointPositions\x12\x0f.JointPositions\x1a\x07.Result\x12\'\n\x15MoveToEndEffectorPose\x12\x05.Pose\x1a\x07.Result\x12+\n\x10SetGripperAction\x12\x0e.GripperAction\x1a\x07.Resultb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n.arm_hand_deployment/franka/proto/service.proto\"\x07\n\x05\x45mpty\"#\n\x0eJointPositions\x12\x11\n\tpositions\x18\x01 \x03(\x02\"\x14\n\x04Pose\x12\x0c\n\x04pose\x18\x01 \x03(\x02\"\x1f\n\tDeltaPose\x12\x12\n\ndelta_pose\x18\x01 \x03(\x02\"\x1e\n\rGripperAction\x12\r\n\x05value\x18\x01 \x01(\x02\":\n\x06Result\x12\x11\n\x02ok\x18\x01 \x01(\x0b\x32\x03.OkH\x00\x12\x13\n\x03\x65rr\x18\x02 \x01(\x0b\x32\x04.ErrH\x00\x42\x08\n\x06result\"\x04\n\x02Ok\"\x16\n\x03\x45rr\x12\x0f\n\x07message\x18\x01 \x01(\t2\xd2\x02\n\rFrankaService\x12\x18\n\x05Start\x12\x06.Empty\x1a\x07.Result\x12\x17\n\x04Stop\x12\x06.Empty\x1a\x07.Result\x12,\n\x11GetJointPositions\x12\x06.Empty\x1a\x0f.JointPositions\x12#\n\x12GetEndEffectorPose\x12\x06.Empty\x1a\x05.Pose\x12\x30\n\x14MoveToJointPositions\x12\x0f.JointPositions\x1a\x07.Result\x12\'\n\x15MoveToEndEffectorPose\x12\x05.Pose\x1a\x07.Result\x12+\n\x10SetGripperAction\x12\x0e.GripperAction\x1a\x07.Result\x12\x33\n\x1c\x43ontrollDeltaEndEffectorPose\x12\n.DeltaPose\x1a\x07.Resultb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,14 +37,16 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_JOINTPOSITIONS']._serialized_end=94
   _globals['_POSE']._serialized_start=96
   _globals['_POSE']._serialized_end=116
-  _globals['_GRIPPERACTION']._serialized_start=118
-  _globals['_GRIPPERACTION']._serialized_end=148
-  _globals['_RESULT']._serialized_start=150
-  _globals['_RESULT']._serialized_end=208
-  _globals['_OK']._serialized_start=210
-  _globals['_OK']._serialized_end=214
-  _globals['_ERR']._serialized_start=216
-  _globals['_ERR']._serialized_end=238
-  _globals['_FRANKASERVICE']._serialized_start=241
-  _globals['_FRANKASERVICE']._serialized_end=526
+  _globals['_DELTAPOSE']._serialized_start=118
+  _globals['_DELTAPOSE']._serialized_end=149
+  _globals['_GRIPPERACTION']._serialized_start=151
+  _globals['_GRIPPERACTION']._serialized_end=181
+  _globals['_RESULT']._serialized_start=183
+  _globals['_RESULT']._serialized_end=241
+  _globals['_OK']._serialized_start=243
+  _globals['_OK']._serialized_end=247
+  _globals['_ERR']._serialized_start=249
+  _globals['_ERR']._serialized_end=271
+  _globals['_FRANKASERVICE']._serialized_start=274
+  _globals['_FRANKASERVICE']._serialized_end=612
 # @@protoc_insertion_point(module_scope)

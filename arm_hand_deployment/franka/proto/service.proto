@@ -16,6 +16,8 @@ service FrankaService{
     rpc MoveToEndEffectorPose(Pose) returns (Result);
 
     rpc SetGripperAction(GripperAction) returns (Result);
+
+    rpc ControllDeltaEndEffectorPose(DeltaPose) returns (Result);
 }
 
 
@@ -27,6 +29,10 @@ message JointPositions {
 
 message Pose {
     repeated float pose = 1; // xyz and rpy
+}
+
+message DeltaPose {
+    repeated float delta_pose = 1; // delta xyz and delta rpy
 }
 
 

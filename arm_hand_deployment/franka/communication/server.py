@@ -235,5 +235,32 @@ class RobotService(service_pb2_grpc.FrankaService):
     def SetGripperAction(self, request, context):
         action = request.value
         RobotService._robot.gripper_control(action)
-        print(action)
+        return service_pb2.Result(ok=service_pb2.Ok())
+
+    def ControllDeltaEndEffectorPose(self, request, context):
+        delta_pose = request.delta_pose
+
+        assert len(delta_pose) == 6
+
+        controller_type = "OSC_POSE"
+        controller_cfg = RobotService._deoxys_osc_controller_cfg
+
+        # Compute delta translation and rotation from the request
+
+        delta_rpy = np.array(delta_pose[3:])
+        delta_quat = rpy_to_quaternion(delta_rpy)
+
+        action_pos = np.array(delta_pose[:3])
+        action_ori = transform_utils.quat2axisangle(delta_quat)
+
+        # Construct the action vector
+        action = np.concatenate((action_pos, action_ori, [-1.0]))
+
+        # Send action to the robot
+        RobotService._robot.control(
+            controller_type=controller_type,
+            action=action,
+            controller_cfg=controller_cfg
+        )
+
         return service_pb2.Result(ok=service_pb2.Ok())

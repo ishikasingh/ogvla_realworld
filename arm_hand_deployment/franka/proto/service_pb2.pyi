@@ -21,6 +21,12 @@ class Pose(_message.Message):
     pose: _containers.RepeatedScalarFieldContainer[float]
     def __init__(self, pose: _Optional[_Iterable[float]] = ...) -> None: ...
 
+class DeltaPose(_message.Message):
+    __slots__ = ("delta_pose",)
+    DELTA_POSE_FIELD_NUMBER: _ClassVar[int]
+    delta_pose: _containers.RepeatedScalarFieldContainer[float]
+    def __init__(self, delta_pose: _Optional[_Iterable[float]] = ...) -> None: ...
+
 class GripperAction(_message.Message):
     __slots__ = ("value",)
     VALUE_FIELD_NUMBER: _ClassVar[int]
