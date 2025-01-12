@@ -27,7 +27,10 @@ def main(cfg: DictConfig):
     with robot_client_context(server_ip, port, FrankaClient) as client:
         client: FrankaClient
 
+        # 7 joint positions for the arm + 1 for the gripper (width of the gripper)
         positions = client.GetJointPositions()
+
+        # xyz+rpy
         ee_pose = client.GetEndEffectorPose()
         print(f"Joint positions: {positions}")
         print(f"End effector pose: {ee_pose}")
@@ -41,7 +44,8 @@ def main(cfg: DictConfig):
             2.30396583422025,
             0.8480939705504309,
         ])
-
+        
+        # 7 joint positions for the arm
         assert client.MoveToJointPositions(target_joint_positions)
 
         positions = client.GetJointPositions()
@@ -51,6 +55,7 @@ def main(cfg: DictConfig):
 
         target_end_effector_pose = np.array([0.5, 0.1, 0.3,  np.pi, 0, 0])
 
+        # xyz+rpy
         assert client.MoveToEndEffectorPose(target_end_effector_pose)
 
         positions = client.GetJointPositions()
