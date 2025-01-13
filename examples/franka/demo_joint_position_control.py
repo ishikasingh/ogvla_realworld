@@ -37,31 +37,37 @@ def main(cfg: DictConfig):
 
     logger.info(f"Connecting to server {server_ip}:{port}")
 
-    initial_joint_positions_dict = np.load(
-        '/home/abrar/Downloads/2025-01-13-14-50-28/initial_joint_positions.npy', allow_pickle=True).item()
+    initial_arm_joint_positions = [-0.14377304911613464, -0.41615936160087585, 0.1558820903301239, -
+                                   2.799217700958252, 0.09156578779220581, 2.3855371475219727, 1.5030053853988647]
 
-    initial_arm_joint_positions = initial_joint_positions_dict[
-        'arm_joint_positions'].tolist()
-
-    actions = np.load('/home/abrar/Downloads/2025-01-13-14-50-28/actions.npy')
+    actions = np.load('actions.npy')
 
     with robot_client_context(server_ip, port, FrankaClient) as client:
         client: FrankaClient
 
         assert client.MoveToJointPositions(initial_arm_joint_positions)
 
+        qpos = client.GetJointPositions()[:7]
+
+        print(f"Initial qpos:\n{qpos}")
+
         @timing_decorator
         def execute(action):
             assert client.ControlJointPositions(action=action)
 
         # warmup
-        execute(initial_arm_joint_positions)
+        execute(qpos)
 
         print('-'*80)
 
         for action in actions:
             action = action[:7].tolist()
+            print(action)
             execute(action)
+
+        # end_joint_positions = actions[-1]
+        # end_joint_positions = end_joint_positions[:7].tolist()
+        # assert client.MoveToJointPositions(end_joint_positions)
 
 
 if __name__ == '__main__':
