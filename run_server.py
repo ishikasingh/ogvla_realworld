@@ -17,7 +17,7 @@ def main(cfg: DictConfig):
     print(arm_hand_type)
 
     if arm_hand_type == ArmHandType.FRANKA:
-        from arm_hand_deployment.franka import run_server
+        from arm_hand_deployment.franka.run_server import run_server
     else:
         raise NotImplementedError(
             f"ArmHandType {arm_hand_type} not implemented")

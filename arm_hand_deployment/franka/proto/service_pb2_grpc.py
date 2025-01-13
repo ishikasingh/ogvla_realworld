@@ -5,7 +5,7 @@ import warnings
 
 from arm_hand_deployment.franka.proto import service_pb2 as arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2
 
-GRPC_GENERATED_VERSION = '1.69.0'
+GRPC_GENERATED_VERSION = '1.67.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
