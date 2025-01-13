@@ -1,5 +1,6 @@
-
 rpc_port: 50051
 server_ip: 172.16.0.1
 
 fci_ip: 172.16.0.2
+
+arm_hand_type: franka
