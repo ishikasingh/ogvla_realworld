@@ -37,59 +37,30 @@ def main(cfg: DictConfig):
 
     logger.info(f"Connecting to server {server_ip}:{port}")
 
+    initial_joint_positions_dict = np.load(
+        '/home/abrar/Downloads/2025-01-13-14-50-28/initial_joint_positions.npy', allow_pickle=True).item()
+
+    initial_arm_joint_positions = initial_joint_positions_dict[
+        'arm_joint_positions'].tolist()
+
+    actions = np.load('/home/abrar/Downloads/2025-01-13-14-50-28/actions.npy')
+
     with robot_client_context(server_ip, port, FrankaClient) as client:
         client: FrankaClient
 
-        # 7 joint positions for the arm + 1 for the gripper (width of the gripper)
-        positions = client.GetJointPositions()
-
-        # xyz+rpy
-        ee_pose = client.GetEndEffectorPose()
-        print(f"Joint positions: {positions}")
-        print(f"End effector pose: {ee_pose}")
-
-        target_joint_positions = np.array([
-            0.09162008114028396,
-            -0.19826458111314524,
-            -0.01990020486871322,
-            -2.4732269941140346,
-            -0.01307073642274261,
-            2.30396583422025,
-            0.8480939705504309,
-        ])
-
-        assert client.MoveToJointPositions(target_joint_positions)
+        assert client.MoveToJointPositions(initial_arm_joint_positions)
 
         @timing_decorator
         def execute(action):
-            assert client.ControllDeltaEndEffectorPose(action=action)
+            assert client.ControlJointPositions(action=action)
 
         # warmup
-        execute([0, 0, 0, 0, 0, 0])
+        execute(initial_arm_joint_positions)
 
         print('-'*80)
 
-        # deoxys's robot interface will block until it has been at least 1/control_freq since last action
-        # but it will be better if we ensure this on our end.
-
-        print('+z')
-        for i in range(20):
-            action = [0, 0, 0.01, 0, 0, 0]
-            execute(action)
-
-        print('-z')
-        for i in range(20):
-            action = [0, 0, -0.01, 0, 0, 0]
-            execute(action)
-
-        print('+x')
-        for i in range(20):
-            action = [0.02, 0, 0, 0, 0, 0]
-            execute(action)
-
-        print('-x')
-        for i in range(20):
-            action = [-0.02, 0, 0, 0, 0, 0]
+        for action in actions:
+            action = action[:7].tolist()
             execute(action)
 
 

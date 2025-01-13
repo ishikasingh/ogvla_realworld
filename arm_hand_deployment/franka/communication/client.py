@@ -5,6 +5,8 @@ import numpy as np
 
 from loguru import logger
 
+from typing import Iterable
+
 
 class FrankaClient(Client):
     def __init__(self, channel):
@@ -34,18 +36,18 @@ class FrankaClient(Client):
         result = self._stub.GetEndEffectorPose(service_pb2.Empty())
         return np.array(result.pose)
 
-    def MoveToJointPositions(self, positions: np.ndarray) -> bool:
+    def MoveToJointPositions(self, positions: Iterable[float]) -> bool:
         result = self._stub.MoveToJointPositions(
-            service_pb2.JointPositions(positions=positions.tolist()))
+            service_pb2.JointPositions(positions=positions))
         if result.HasField("ok"):
             return True
         else:
             logger.error(f"Error: {result.err.message}")
             return False
 
-    def MoveToEndEffectorPose(self, pose: np.ndarray) -> bool:
+    def MoveToEndEffectorPose(self, pose: Iterable[float]) -> bool:
         result = self._stub.MoveToEndEffectorPose(
-            service_pb2.Pose(pose=pose.tolist()))
+            service_pb2.Pose(pose=pose))
         if result.HasField("ok"):
             return True
         else:
@@ -63,7 +65,7 @@ class FrankaClient(Client):
             logger.error(f"Error: {result.err.message}")
             return False
 
-    def ControllDeltaEndEffectorPose(self, action: np.ndarray) -> bool:
+    def ControllDeltaEndEffectorPose(self, action: Iterable[float]) -> bool:
         """
         action: (6,) delta xyz+delta rpy
         """
@@ -77,7 +79,7 @@ class FrankaClient(Client):
             logger.error(f"Error: {result.err.message}")
             return False
 
-    def ControlJointPositions(self, action: np.ndarray) -> bool:
+    def ControlJointPositions(self, action: Iterable[float]) -> bool:
         """
         action: (7,) joint positions
         """

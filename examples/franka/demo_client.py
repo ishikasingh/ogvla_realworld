@@ -35,7 +35,7 @@ def main(cfg: DictConfig):
         print(f"Joint positions: {positions}")
         print(f"End effector pose: {ee_pose}")
 
-        target_joint_positions = np.array([
+        target_joint_positions = [
             0.09162008114028396,
             -0.19826458111314524,
             -0.01990020486871322,
@@ -43,8 +43,8 @@ def main(cfg: DictConfig):
             -0.01307073642274261,
             2.30396583422025,
             0.8480939705504309,
-        ])
-        
+        ]
+
         # 7 joint positions for the arm
         assert client.MoveToJointPositions(target_joint_positions)
 
@@ -53,7 +53,7 @@ def main(cfg: DictConfig):
         print(f"Joint positions: {positions}")
         print(f"End effector pose: {ee_pose}")
 
-        target_end_effector_pose = np.array([0.5, 0.1, 0.3,  np.pi, 0, 0])
+        target_end_effector_pose = [0.5, 0.1, 0.3,  np.pi, 0, 0]
 
         # xyz+rpy
         assert client.MoveToEndEffectorPose(target_end_effector_pose)
