@@ -264,3 +264,21 @@ class RobotService(service_pb2_grpc.FrankaService):
         )
 
         return service_pb2.Result(ok=service_pb2.Ok())
+
+    def ControlJointPositions(self, request, context):
+        action = request.positions
+
+        assert len(action) == 7
+
+        controller_type = "JOINT_POSITION"
+        controller_cfg = RobotService._deoxys_joint_position_controller_cfg
+
+        action = action + [-1.0]
+
+        RobotService._robot.control(
+            controller_type=controller_type,
+            action=action,
+            controller_cfg=controller_cfg
+        )
+
+        return service_pb2.Result(ok=service_pb2.Ok())

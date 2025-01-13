@@ -5,7 +5,7 @@ import warnings
 
 from arm_hand_deployment.franka.proto import service_pb2 as arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2
 
-GRPC_GENERATED_VERSION = '1.67.1'
+GRPC_GENERATED_VERSION = '1.69.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -74,6 +74,11 @@ class FrankaServiceStub(object):
                 request_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.DeltaPose.SerializeToString,
                 response_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
                 _registered_method=True)
+        self.ControlJointPositions = channel.unary_unary(
+                '/FrankaService/ControlJointPositions',
+                request_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.JointPositions.SerializeToString,
+                response_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
+                _registered_method=True)
 
 
 class FrankaServiceServicer(object):
@@ -129,6 +134,12 @@ class FrankaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ControlJointPositions(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_FrankaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -170,6 +181,11 @@ def add_FrankaServiceServicer_to_server(servicer, server):
             'ControllDeltaEndEffectorPose': grpc.unary_unary_rpc_method_handler(
                     servicer.ControllDeltaEndEffectorPose,
                     request_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.DeltaPose.FromString,
+                    response_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.SerializeToString,
+            ),
+            'ControlJointPositions': grpc.unary_unary_rpc_method_handler(
+                    servicer.ControlJointPositions,
+                    request_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.JointPositions.FromString,
                     response_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.SerializeToString,
             ),
     }
@@ -388,6 +404,33 @@ class FrankaService(object):
             target,
             '/FrankaService/ControllDeltaEndEffectorPose',
             arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.DeltaPose.SerializeToString,
+            arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ControlJointPositions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/FrankaService/ControlJointPositions',
+            arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.JointPositions.SerializeToString,
             arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
             options,
             channel_credentials,

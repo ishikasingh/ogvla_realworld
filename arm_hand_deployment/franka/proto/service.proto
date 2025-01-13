@@ -18,6 +18,8 @@ service FrankaService{
     rpc SetGripperAction(GripperAction) returns (Result);
 
     rpc ControllDeltaEndEffectorPose(DeltaPose) returns (Result);
+
+    rpc ControlJointPositions(JointPositions) returns (Result);
 }
 
 
