@@ -7,18 +7,25 @@ service FrankaService{
     // RPC to stop the robot
     rpc Stop (Empty) returns (Result);
 
+    // Get joint positions (7 arm joints + 1 gripper width).
     rpc GetJointPositions(Empty) returns (JointPositions);
 
+    // Get end effector pose (3 xyz + 3 rpy).
     rpc GetEndEffectorPose(Empty) returns (Pose);
 
+    // Move to specific joint positions (7 arm joints).
     rpc MoveToJointPositions(JointPositions) returns (Result);
 
+    // Move to a specific end effector pose (3 xyz + 3 rpy).
     rpc MoveToEndEffectorPose(Pose) returns (Result);
 
+    // Set gripper width. >0 fully closes the gripper, <0 opens to |value| * 0.08.
     rpc SetGripperAction(GripperAction) returns (Result);
 
+    // 3 (delta xyz) + 3 (delta rpy)
     rpc ControllDeltaEndEffectorPose(DeltaPose) returns (Result);
 
+    // 7 (arm joints)
     rpc ControlJointPositions(JointPositions) returns (Result);
 }
 
