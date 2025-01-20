@@ -99,43 +99,50 @@ class FrankaServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def GetJointPositions(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Get joint positions (7 arm joints + 1 gripper width).
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def GetEndEffectorPose(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Get end effector pose (3 xyz + 3 rpy).
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def MoveToJointPositions(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Move to specific joint positions (7 arm joints).
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def MoveToEndEffectorPose(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Move to a specific end effector pose (3 xyz + 3 rpy).
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def SetGripperAction(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Set gripper width. >0 fully closes the gripper, <0 opens to |value| * 0.08.
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def ControllDeltaEndEffectorPose(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """3 (delta xyz) + 3 (delta rpy)
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def ControlJointPositions(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """7 (arm joints)
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')

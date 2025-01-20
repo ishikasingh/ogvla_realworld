@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+service FrankaAllegroService{
+    // RPC to start the robot
+    rpc Start (Empty) returns (Result);
+
+    // RPC to stop the robot
+    rpc Stop (Empty) returns (Result);
+
+    // Get end effector pose (3 xyz + 3 rpy).
+    rpc GetEndEffectorPose(Empty) returns (Pose);
+
+    // Move to specific joint positions (7 arm joints).
+    rpc ArmMoveToJointPositions(JointPositions) returns (Result);
+
+    // Move to a specific end effector pose (3 xyz + 3 rpy).
+    rpc ArmMoveToEndEffectorPose(Pose) returns (Result);
+
+}
+
+
+message Empty {}
+
+message JointPositions {
+    repeated float positions = 1;
+}
+
+message Pose {
+    repeated float pose = 1; // xyz and rpy
+}
+
+
+
+message Result {
+    oneof result {
+        Ok ok = 1;
+        Err err = 2;
+    }
+}
+
+message Ok {}
+
+
+message Err {
+    string message = 1;
+}
