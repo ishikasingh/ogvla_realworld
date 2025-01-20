@@ -67,6 +67,7 @@ class RobotService(service_pb2_grpc.FrankaService):
             RobotService._robot = FrankaInterface(
                 general_cfg_file=RobotService._deoxys_general_cfg_file,
                 has_gripper=True,
+                automatic_gripper_reset=False,
             )
 
             sleep(1)
@@ -127,8 +128,6 @@ class RobotService(service_pb2_grpc.FrankaService):
 
             assert len(joint_positions) == 7
 
-            arm_action = joint_positions + [-1.0]
-
             # Maximum number of attempts to reach the target positions
             max_attempts = 300
             cnt = 0
@@ -153,9 +152,9 @@ class RobotService(service_pb2_grpc.FrankaService):
                     logger.warning(warning_message)
                     return service_pb2.Result(err=service_pb2.Err(message=warning_message))
 
-                RobotService._robot.control(
+                RobotService._robot.arm_control(
                     controller_type=controller_type,
-                    action=arm_action,
+                    action=joint_positions,
                     controller_cfg=controller_cfg,
                 )
 
@@ -210,9 +209,8 @@ class RobotService(service_pb2_grpc.FrankaService):
             # Function to execute the arm movement using the IK result
             def execute_ik_result():
                 for joint in joint_traj:
-                    # Append -1.0 to indicate the end of the command
-                    action = joint.tolist() + [-1.0]
-                    RobotService._robot.control(
+                    action = joint.tolist()
+                    RobotService._robot.arm_control(
                         controller_type=controller_type,
                         action=action,
                         controller_cfg=controller_cfg,
@@ -254,10 +252,10 @@ class RobotService(service_pb2_grpc.FrankaService):
         action_ori = transform_utils.quat2axisangle(delta_quat)
 
         # Construct the action vector
-        action = np.concatenate((action_pos, action_ori, [-1.0]))
+        action = np.concatenate((action_pos, action_ori))
 
         # Send action to the robot
-        RobotService._robot.control(
+        RobotService._robot.arm_control(
             controller_type=controller_type,
             action=action,
             controller_cfg=controller_cfg
@@ -274,9 +272,7 @@ class RobotService(service_pb2_grpc.FrankaService):
         controller_type = "JOINT_IMPEDANCE"
         controller_cfg = RobotService._deoxys_joint_impedance_controller_cfg
 
-        action = action + [-1.0]
-
-        RobotService._robot.control(
+        RobotService._robot.arm_control(
             controller_type=controller_type,
             action=action,
             controller_cfg=controller_cfg
