@@ -23,7 +23,7 @@ from deoxys.utils import YamlConfig, transform_utils
 from deoxys.utils.ik_utils import IKWrapper
 
 
-class RobotService(service_pb2_grpc.FrankaService):
+class RobotService(service_pb2_grpc.FrankaAllegroService):
     # Shared attribute across all instances of RobotService
     _robot: Optional[FrankaInterface] = None
 

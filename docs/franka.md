@@ -14,11 +14,11 @@ franka arm + franka gripper
 在两个terminal启动arm和gripper的控制进程：
 
 ```bash
-bash scripts/auto_gripper.sh
+bash scripts/franka/auto_gripper.sh
 ```
 
 ```bash
-bash scripts/auto_gripper.sh
+bash scripts/franka/auto_gripper.sh
 ```
 
 然后启动server：

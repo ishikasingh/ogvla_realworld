@@ -10,7 +10,7 @@ from typing import Iterable
 
 class FrankaAllegroClient(Client):
     def __init__(self, channel):
-        self._stub = service_pb2_grpc.FrankaAllegroService(channel)
+        self._stub = service_pb2_grpc.FrankaAllegroServiceStub(channel)
 
     def Start(self) -> bool:
         result = self._stub.Start(service_pb2.Empty())
