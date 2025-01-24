@@ -28,6 +28,10 @@ class FrankaAllegroClient(Client):
             logger.error(f"Error: {result.err.message}")
             return False
 
+    def GetJointPositions(self) -> np.ndarray:
+        result = self._stub.GetJointPositions(service_pb2.Empty())
+        return np.array(result.positions)
+
     def GetEndEffectorPose(self) -> np.ndarray:
         result = self._stub.GetEndEffectorPose(service_pb2.Empty())
         return np.array(result.pose)

@@ -7,6 +7,9 @@ service FrankaAllegroService{
     // RPC to stop the robot
     rpc Stop (Empty) returns (Result);
 
+    // Get joint positions (7 arm + 16 hand).
+    rpc GetJointPositions(Empty) returns (JointPositions);
+
     // Get end effector pose (3 xyz + 3 rpy).
     rpc GetEndEffectorPose(Empty) returns (Pose);
 

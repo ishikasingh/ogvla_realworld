@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n6arm_hand_deployment/franka_allegro/proto/service.proto\"\x07\n\x05\x45mpty\"#\n\x0eJointPositions\x12\x11\n\tpositions\x18\x01 \x03(\x02\"\x14\n\x04Pose\x12\x0c\n\x04pose\x18\x01 \x03(\x02\":\n\x06Result\x12\x11\n\x02ok\x18\x01 \x01(\x0b\x32\x03.OkH\x00\x12\x13\n\x03\x65rr\x18\x02 \x01(\x0b\x32\x04.ErrH\x00\x42\x08\n\x06result\"\x04\n\x02Ok\"\x16\n\x03\x45rr\x12\x0f\n\x07message\x18\x01 \x01(\t2\xcf\x01\n\x14\x46rankaAllegroService\x12\x18\n\x05Start\x12\x06.Empty\x1a\x07.Result\x12\x17\n\x04Stop\x12\x06.Empty\x1a\x07.Result\x12#\n\x12GetEndEffectorPose\x12\x06.Empty\x1a\x05.Pose\x12\x33\n\x17\x41rmMoveToJointPositions\x12\x0f.JointPositions\x1a\x07.Result\x12*\n\x18\x41rmMoveToEndEffectorPose\x12\x05.Pose\x1a\x07.Resultb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n6arm_hand_deployment/franka_allegro/proto/service.proto\"\x07\n\x05\x45mpty\"#\n\x0eJointPositions\x12\x11\n\tpositions\x18\x01 \x03(\x02\"\x14\n\x04Pose\x12\x0c\n\x04pose\x18\x01 \x03(\x02\":\n\x06Result\x12\x11\n\x02ok\x18\x01 \x01(\x0b\x32\x03.OkH\x00\x12\x13\n\x03\x65rr\x18\x02 \x01(\x0b\x32\x04.ErrH\x00\x42\x08\n\x06result\"\x04\n\x02Ok\"\x16\n\x03\x45rr\x12\x0f\n\x07message\x18\x01 \x01(\t2\xfd\x01\n\x14\x46rankaAllegroService\x12\x18\n\x05Start\x12\x06.Empty\x1a\x07.Result\x12\x17\n\x04Stop\x12\x06.Empty\x1a\x07.Result\x12,\n\x11GetJointPositions\x12\x06.Empty\x1a\x0f.JointPositions\x12#\n\x12GetEndEffectorPose\x12\x06.Empty\x1a\x05.Pose\x12\x33\n\x17\x41rmMoveToJointPositions\x12\x0f.JointPositions\x1a\x07.Result\x12*\n\x18\x41rmMoveToEndEffectorPose\x12\x05.Pose\x1a\x07.Resultb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -44,5 +44,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ERR']._serialized_start=192
   _globals['_ERR']._serialized_end=214
   _globals['_FRANKAALLEGROSERVICE']._serialized_start=217
-  _globals['_FRANKAALLEGROSERVICE']._serialized_end=424
+  _globals['_FRANKAALLEGROSERVICE']._serialized_end=470
 # @@protoc_insertion_point(module_scope)

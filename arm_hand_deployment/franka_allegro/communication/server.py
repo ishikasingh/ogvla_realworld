@@ -22,10 +22,15 @@ from deoxys.franka_interface import FrankaInterface
 from deoxys.utils import YamlConfig, transform_utils
 from deoxys.utils.ik_utils import IKWrapper
 
+# NOTE (hsc): This is a ROS package.
+from allegro_hand.controller import AllegroController
+
 
 class RobotService(service_pb2_grpc.FrankaAllegroService):
     # Shared attribute across all instances of RobotService
     _robot: Optional[FrankaInterface] = None
+
+    _allegro_controller: Optional[AllegroController] = None
 
     _fci_ip: Optional[str] = None
     _deoxys_general_cfg_file: Optional[str] = None
@@ -59,6 +64,14 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
             RobotService._deoxys_joint_impedance_controller_cfg = YamlConfig(
                 deoxys_joint_impedance_controller_cfg_file).as_easydict()
 
+        # Start the Allegro Hand controller
+        # NOTE (hsc): If I initialize the ROS node in Start, there is something very weird.
+        # I don't know why.
+        if RobotService._allegro_controller is None:
+            RobotService._allegro_controller = AllegroController()
+        else:
+            logger.warning("Allegro hand already started")
+
     # By design, we didn't launch the actual franka control process here.
 
     def Start(self, request, context):
@@ -71,6 +84,15 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
             )
 
             sleep(1)
+
+        initial_hand_joint_positions = RobotService._allegro_controller.current_joint_pose.position
+        print("Initial hand joint positions:")
+        print(initial_hand_joint_positions)
+        RobotService._allegro_controller.hand_pose(
+            initial_hand_joint_positions)
+
+        sleep(1)
+
         return service_pb2.Result(ok=service_pb2.Ok())
 
     def Stop(self, request, context):
