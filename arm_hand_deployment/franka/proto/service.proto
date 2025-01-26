@@ -29,6 +29,8 @@ service FrankaService{
     rpc ControlJointPositions(JointPositions) returns (Result);
 
     rpc GetGripperMessage(Empty) returns (GripperMessage);
+
+    rpc StopGripper(Empty) returns (Result);
 }
 
 

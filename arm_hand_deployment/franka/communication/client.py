@@ -94,3 +94,11 @@ class FrankaClient(Client):
     def GetGripperIsGrasped(self) -> bool:
         result = self._stub.GetGripperMessage(service_pb2.Empty())
         return result.is_grasped
+
+    def StopGripper(self) -> bool:
+        result = self._stub.StopGripper(service_pb2.Empty())
+        if result.HasField("ok"):
+            return True
+        else:
+            logger.error(f"Error: {result.err.message}")
+            return False
