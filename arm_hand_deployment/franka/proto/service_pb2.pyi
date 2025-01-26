@@ -33,6 +33,12 @@ class GripperAction(_message.Message):
     value: float
     def __init__(self, value: _Optional[float] = ...) -> None: ...
 
+class GripperMessage(_message.Message):
+    __slots__ = ("is_grasped",)
+    IS_GRASPED_FIELD_NUMBER: _ClassVar[int]
+    is_grasped: bool
+    def __init__(self, is_grasped: bool = ...) -> None: ...
+
 class Result(_message.Message):
     __slots__ = ("ok", "err")
     OK_FIELD_NUMBER: _ClassVar[int]

@@ -279,3 +279,15 @@ class RobotService(service_pb2_grpc.FrankaService):
         )
 
         return service_pb2.Result(ok=service_pb2.Ok())
+
+    def GetGripperMessage(self, request, context):
+
+        if RobotService._robot is None:
+            context.set_details("Robot not started")
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            logger.error("GetGripperMessage: Robot not started")
+            return service_pb2.GripperMessage()
+
+        is_grasped = RobotService._robot.last_gripper_is_grasped
+
+        return service_pb2.GripperMessage(is_grasped=is_grasped)

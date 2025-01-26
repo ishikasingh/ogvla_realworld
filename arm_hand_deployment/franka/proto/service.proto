@@ -27,6 +27,8 @@ service FrankaService{
 
     // 7 (arm joints)
     rpc ControlJointPositions(JointPositions) returns (Result);
+
+    rpc GetGripperMessage(Empty) returns (GripperMessage);
 }
 
 
@@ -47,6 +49,10 @@ message DeltaPose {
 
 message GripperAction{
     float value = 1;
+}
+
+message GripperMessage{
+    bool is_grasped = 1;
 }
 
 
