@@ -119,118 +119,160 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
 
         return service_pb2.Pose(pose=np.concatenate((ee_pos, rpy)))
 
+    def GetJointPositions(self, request, context):
+        if RobotService._robot is None:
+            context.set_details("Robot not started")
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            logger.error("GetJointPositions: Robot not started")
+            return service_pb2.JointPositions()
+
+        if RobotService._allegro_controller is None:
+            context.set_details("Allegro hand not started")
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            logger.error("GetJointPositions: Allegro hand not started")
+            return service_pb2.JointPositions()
+
+        arm_q = RobotService._robot.last_q
+
+        hand_q = np.array(
+            RobotService._allegro_controller.current_joint_pose.position)
+
+        return service_pb2.JointPositions(positions=np.concatenate([arm_q, hand_q]))
+
     def ArmMoveToJointPositions(self, request, context):
         if RobotService._robot is None:
             logger.error("Robot not started")
             return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
 
-        try:
-            # Define the controller type and configuration for the arm
-            controller_type = "JOINT_POSITION"
-            controller_cfg = RobotService._deoxys_joint_position_controller_cfg
+        if RobotService._allegro_controller is None:
+            logger.error("Allegro hand not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Allegro hand not started"))
 
-            joint_positions = list(request.positions)
+        # Define the controller type and configuration for the arm
+        controller_type = "JOINT_IMPEDANCE"
+        controller_cfg = RobotService._deoxys_joint_impedance_controller_cfg
 
-            assert len(joint_positions) == 7
+        joint_positions = list(request.positions)
+        assert len(joint_positions) == 7
 
-            # Maximum number of attempts to reach the target positions
-            max_attempts = 300
-            cnt = 0
+        # Franka arm joints
+        arm_target_joint_positions = np.array(joint_positions[:7])
+        arm_initial_positions = np.array(RobotService._robot.last_q[:7])
 
-            threshold_arm = 1e-3
+        # Interpolation parameters
+        num_steps = 100  # Number of interpolation steps
 
-            # Control loop to move both the arm and the hand to their target positions
-            while True:
-                # Check the current joint positions of the arm
-                arm_current_positions = RobotService._robot.last_q
+        # Generate interpolation steps
+        interpolated_positions = np.linspace(
+            arm_initial_positions, arm_target_joint_positions, num_steps)
 
-                # Break the loop if the joints are within a small tolerance of the target for both arm and hand
-                delta_arm = np.max(
-                    np.abs(np.array(arm_current_positions) - np.array(joint_positions)))
-                arm_reached = delta_arm < threshold_arm
+        for arm_interpolated_positions in interpolated_positions:
+            arm_action = arm_interpolated_positions.tolist() + [-1.0]
 
-                if arm_reached:
-                    break
+            RobotService._robot.control(
+                controller_type=controller_type,
+                action=arm_action,
+                controller_cfg=controller_cfg,
+            )
 
-                if cnt >= max_attempts:
-                    warning_message = "Failed to reach target joint positions within the maximum attempts."
-                    logger.warning(warning_message)
-                    return service_pb2.Result(err=service_pb2.Err(message=warning_message))
-
-                RobotService._robot.arm_control(
-                    controller_type=controller_type,
-                    action=joint_positions,
-                    controller_cfg=controller_cfg,
-                )
-
-                # Optional: Add a small sleep to prevent excessive command frequency
-                sleep(0.01)
-                cnt += 1
-
-            return service_pb2.Result(ok=service_pb2.Ok())
-
-        except Exception as e:
-            context.set_details(f"Failed to move to joint positions: {e}")
-            context.set_code(grpc.StatusCode.INTERNAL)
-            logger.error(f"MoveToJointPositions error: {e}")
-            return service_pb2.Result(err=service_pb2.Err(message="Failed to move to joint positions"))
+        return service_pb2.Result(ok=service_pb2.Ok())
 
     def ArmMoveToEndEffectorPose(self, request, context):
         if RobotService._robot is None:
             logger.error("Robot not started")
             return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
 
-        try:
-            # Use Joint Impedance controller configuration for arm
-            controller_type = "JOINT_IMPEDANCE"
-            # Use the impedance controller config
-            controller_cfg = RobotService._deoxys_joint_impedance_controller_cfg
+        # Use Joint Impedance controller configuration for arm
+        controller_type = "JOINT_IMPEDANCE"
+        # Use the impedance controller config
+        controller_cfg = RobotService._deoxys_joint_impedance_controller_cfg
 
-            # Initialize IKWrapper for inverse kinematics calculation
-            ik_wrapper = IKWrapper()
+        # Initialize IKWrapper for inverse kinematics calculation
+        ik_wrapper = IKWrapper()
 
-            # Extract target pose (xyz + rpy) and convert rpy to rotation matrix
-            target_position: np.ndarray = np.array(request.pose[:3])
+        # Extract target pose (xyz + rpy) and convert rpy to rotation matrix
+        target_position: np.ndarray = np.array(request.pose[:3])
 
-            target_rpy = request.pose[3:]
-            target_mat = rpy_to_rotation_matrix(target_rpy)
+        target_rpy = request.pose[3:]
+        target_mat = rpy_to_rotation_matrix(target_rpy)
 
-            # Get the current joint positions
-            current_joint_positions = RobotService._robot.last_q
+        # Get the current joint positions
+        current_joint_positions = RobotService._robot.last_q
 
-            # Compute IK to get joint trajectory to the target end-effector pose
-            joint_traj, debug_info = ik_wrapper.ik_trajectory_to_target_pose(
-                target_position, target_mat, current_joint_positions, num_points=20
-            )
+        # Compute IK to get joint trajectory to the target end-effector pose
+        joint_traj, debug_info = ik_wrapper.ik_trajectory_to_target_pose(
+            target_position, target_mat, current_joint_positions, num_points=20
+        )
 
-            if joint_traj is None:
-                error_message = "IK failed to compute a valid trajectory."
-                logger.error(error_message)
-                return service_pb2.Result(err=service_pb2.Err(message=error_message))
+        if joint_traj is None:
+            error_message = "IK failed to compute a valid trajectory."
+            logger.error(error_message)
+            return service_pb2.Result(err=service_pb2.Err(message=error_message))
 
-            # Interpolate the trajectory for smooth motion
-            joint_traj = ik_wrapper.interpolate_dense_traj(joint_traj)
+        # Interpolate the trajectory for smooth motion
+        joint_traj = ik_wrapper.interpolate_dense_traj(joint_traj)
 
-            # Function to execute the arm movement using the IK result
-            def execute_ik_result():
-                for joint in joint_traj:
-                    action = joint.tolist()
-                    RobotService._robot.arm_control(
-                        controller_type=controller_type,
-                        action=action,
-                        controller_cfg=controller_cfg,
-                    )
+        # Function to execute the arm movement using the IK result
+        def execute_ik_result():
+            for joint in joint_traj:
+                action = joint.tolist()
+                RobotService._robot.arm_control(
+                    controller_type=controller_type,
+                    action=action,
+                    controller_cfg=controller_cfg,
+                )
 
-            # Execute the arm movement
-            execute_ik_result()
+        # Execute the arm movement
+        execute_ik_result()
 
-            logger.info("MoveToEndEffectorPose executed successfully")
-            return service_pb2.Result(ok=service_pb2.Ok())
+        logger.info("MoveToEndEffectorPose executed successfully")
+        return service_pb2.Result(ok=service_pb2.Ok())
 
-        except Exception as e:
-            context.set_details(
-                f"Failed to move to target arm end-effector pose: {e}")
-            context.set_code(grpc.StatusCode.INTERNAL)
-            logger.error(traceback.format_exc())
-            logger.error(f"MoveToEndEffectorPose error: {e}")
-            return service_pb2.Result(err=service_pb2.Err(message="Failed to execute MoveToEndEffectorPose"))
+    def HandMoveToJointPositions(self, request, context):
+        if RobotService._allegro_controller is None:
+            context.set_details("Allegro hand not started")
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            logger.error("HandMoveToJointPositions: Allegro hand not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
+
+        hand_target_joint_positions = np.array(request.positions)
+
+        assert len(hand_target_joint_positions) == 16
+
+        max_attempts = 200
+        cnt = 0
+
+        threshold_hand_pos = 0.1  # 5e-2
+        while True:
+
+            # Check the current joint positions of the hand
+            hand_current_positions = np.array(
+                RobotService._allegro_controller.current_joint_pose.position)
+
+            # NOTE (hsc): there seems to be some friction between joint 12 and the 3d printed link.
+
+            delta_hand = np.abs(
+                hand_current_positions - hand_target_joint_positions)
+            delta_hand_12 = delta_hand[12]
+            print(f"delta of joint 12: {delta_hand_12}")
+            delta_hand[12] = 0
+            # print(delta_hand)
+            delta_hand = np.max(delta_hand)
+            hand_reached = delta_hand < threshold_hand_pos
+
+            if hand_reached and cnt > 20:
+                break
+
+            if cnt >= max_attempts:
+                warning_message = "Failed to reach target joint positions within the maximum attempts."
+                logger.warning(warning_message)
+                return service_pb2.Result(err=service_pb2.Err(message=warning_message))
+
+            if not hand_reached:
+                RobotService._allegro_controller.hand_pose(
+                    hand_target_joint_positions)
+
+            sleep(0.01)
+            cnt += 1
+
+        return service_pb2.Result(ok=service_pb2.Ok())

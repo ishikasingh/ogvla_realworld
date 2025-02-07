@@ -64,6 +64,11 @@ class FrankaAllegroServiceStub(object):
                 request_serializer=arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Pose.SerializeToString,
                 response_deserializer=arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Result.FromString,
                 _registered_method=True)
+        self.HandMoveToJointPositions = channel.unary_unary(
+                '/FrankaAllegroService/HandMoveToJointPositions',
+                request_serializer=arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.JointPositions.SerializeToString,
+                response_deserializer=arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Result.FromString,
+                _registered_method=True)
 
 
 class FrankaAllegroServiceServicer(object):
@@ -111,6 +116,13 @@ class FrankaAllegroServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HandMoveToJointPositions(self, request, context):
+        """Move to specific joint positions (16 hand joints).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_FrankaAllegroServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -142,6 +154,11 @@ def add_FrankaAllegroServiceServicer_to_server(servicer, server):
             'ArmMoveToEndEffectorPose': grpc.unary_unary_rpc_method_handler(
                     servicer.ArmMoveToEndEffectorPose,
                     request_deserializer=arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Pose.FromString,
+                    response_serializer=arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Result.SerializeToString,
+            ),
+            'HandMoveToJointPositions': grpc.unary_unary_rpc_method_handler(
+                    servicer.HandMoveToJointPositions,
+                    request_deserializer=arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.JointPositions.FromString,
                     response_serializer=arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Result.SerializeToString,
             ),
     }
@@ -306,6 +323,33 @@ class FrankaAllegroService(object):
             target,
             '/FrankaAllegroService/ArmMoveToEndEffectorPose',
             arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Pose.SerializeToString,
+            arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Result.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def HandMoveToJointPositions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/FrankaAllegroService/HandMoveToJointPositions',
+            arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.JointPositions.SerializeToString,
             arm__hand__deployment_dot_franka__allegro_dot_proto_dot_service__pb2.Result.FromString,
             options,
             channel_credentials,
