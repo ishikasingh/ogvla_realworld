@@ -129,8 +129,8 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
             return service_pb2.Result(err=service_pb2.Err(message="Allegro hand not started"))
 
         # Define the controller type and configuration for the arm
-        controller_type = "JOINT_IMPEDANCE"
-        controller_cfg = RobotService._deoxys_joint_impedance_controller_cfg
+        controller_type = "JOINT_POSITION"
+        controller_cfg = RobotService._deoxys_joint_position_controller_cfg
 
         joint_positions = list(request.positions)
 
@@ -147,7 +147,7 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
         max_attempts = 300
         cnt = 0
 
-        threshold_arm = 1e-3
+        threshold_arm = 2e-3
         threshold_hand_pos = 0.1  # 5e-2
 
         # Control loop to move both the arm and the hand to their target positions
