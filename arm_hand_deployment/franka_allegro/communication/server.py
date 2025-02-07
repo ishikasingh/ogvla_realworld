@@ -119,6 +119,91 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
 
         return service_pb2.Pose(pose=np.concatenate((ee_pos, rpy)))
 
+    def MoveToJointPositions(self, request, context):
+        if RobotService._robot is None:
+            logger.error("Robot not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
+
+        if RobotService._allegro_controller is None:
+            logger.error("Allegro hand not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Allegro hand not started"))
+
+        # Define the controller type and configuration for the arm
+        controller_type = "JOINT_IMPEDANCE"
+        controller_cfg = RobotService._deoxys_joint_impedance_controller_cfg
+
+        joint_positions = list(request.positions)
+
+        # Split joint positions for the arm and hand
+        # Franka arm joints
+        arm_target_joint_positions = joint_positions[:7]
+        # Allegro hand joints (expected to be 16 values)
+        hand_target_joint_positions = joint_positions[7:]
+
+        # Append -1.0 to indicate the end of command for the arm
+        arm_action = arm_target_joint_positions + [-1.0]
+
+        # Maximum number of attempts to reach the target positions
+        max_attempts = 300
+        cnt = 0
+
+        threshold_arm = 1e-3
+        threshold_hand_pos = 0.1  # 5e-2
+
+        # Control loop to move both the arm and the hand to their target positions
+        while True:
+            # Check the current joint positions of the arm
+            arm_current_positions = RobotService._robot.last_q
+
+            # Check the current joint positions of the hand
+            hand_current_positions = np.array(
+                RobotService._allegro_controller.current_joint_pose.position)
+
+            # Break the loop if the joints are within a small tolerance of the target for both arm and hand
+            delta_arm = np.max(
+                np.abs(np.array(arm_current_positions) - np.array(arm_target_joint_positions)))
+            arm_reached = delta_arm < threshold_arm
+
+            # there seems to be some friction between joint 12 and the 3d printed link.
+
+            delta_hand = np.abs(
+                hand_current_positions - np.array(hand_target_joint_positions))
+            delta_hand_12 = delta_hand[12]
+            print(f"delta of joint 12: {delta_hand_12}")
+            delta_hand[12] = 0
+            # print(delta_hand)
+            delta_hand = np.max(delta_hand)
+            hand_reached = delta_hand < threshold_hand_pos
+
+            print(delta_arm, delta_hand)
+
+            if arm_reached and hand_reached and cnt > 20:
+                break
+
+            if cnt >= max_attempts:
+                warning_message = "Failed to reach target joint positions within the maximum attempts."
+                logger.warning(warning_message)
+                return service_pb2.Result(err=service_pb2.Err(message=warning_message))
+
+            # Send the action to the robot's control method for the arm
+            if not arm_reached:
+                RobotService._robot.control(
+                    controller_type=controller_type,
+                    action=arm_action,
+                    controller_cfg=controller_cfg,
+                )
+
+            # Update the hand joint positions
+            if not hand_reached:
+                RobotService._allegro_controller.hand_pose(
+                    hand_target_joint_positions)
+
+            # Optional: Add a small sleep to prevent excessive command frequency
+            sleep(0.01)
+            cnt += 1
+
+        return service_pb2.Result(ok=service_pb2.Ok())
+
     def GetJointPositions(self, request, context):
         if RobotService._robot is None:
             context.set_details("Robot not started")

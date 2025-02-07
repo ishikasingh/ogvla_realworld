@@ -36,6 +36,17 @@ class FrankaAllegroClient(Client):
         result = self._stub.GetEndEffectorPose(service_pb2.Empty())
         return np.array(result.pose)
 
+    def MoveToJointPositions(self, joint_positions: np.ndarray) -> bool:
+        # Convert joint positions to protobuf message format
+        joint_positions_msg = service_pb2.JointPositions(
+            positions=joint_positions.tolist())
+        result = self._stub.MoveToJointPositions(joint_positions_msg)
+        if result.HasField("ok"):
+            return True
+        else:
+            logger.error(f"Error: {result.err.message}")
+            return False
+
     def ArmMoveToJointPositions(self, positions: Iterable[float]) -> bool:
         result = self._stub.ArmMoveToJointPositions(
             service_pb2.JointPositions(positions=positions))

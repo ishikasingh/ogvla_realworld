@@ -13,6 +13,9 @@ service FrankaAllegroService{
     // Get end effector pose (3 xyz + 3 rpy).
     rpc GetEndEffectorPose(Empty) returns (Pose);
 
+    // Move to specific joint positions (7 arm + 16 hand).
+    rpc MoveToJointPositions (JointPositions) returns (Result);
+
     // Move to specific joint positions (7 arm joints).
     rpc ArmMoveToJointPositions(JointPositions) returns (Result);
 
