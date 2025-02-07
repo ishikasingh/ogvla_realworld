@@ -22,6 +22,9 @@ service FrankaAllegroService{
     // Move to specific joint positions (16 hand joints).
     rpc HandMoveToJointPositions(JointPositions) returns (Result);
 
+    // (7 arm + 16 hand).
+    rpc ControlJointPositions(JointPositions) returns (Result);
+
 }
 
 

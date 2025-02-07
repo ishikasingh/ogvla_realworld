@@ -62,3 +62,15 @@ class FrankaAllegroClient(Client):
         else:
             logger.error(f"Error: {result.err.message}")
             return False
+
+    def ControlJointPositions(self, action: Iterable[float]) -> bool:
+        """
+        action: (23,) joint positions
+        """
+        result = self._stub.ControlJointPositions(
+            service_pb2.JointPositions(positions=action))
+        if result.HasField("ok"):
+            return True
+        else:
+            logger.error(f"Error: {result.err.message}")
+            return False

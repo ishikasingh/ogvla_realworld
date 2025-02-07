@@ -276,3 +276,32 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
             cnt += 1
 
         return service_pb2.Result(ok=service_pb2.Ok())
+
+    def ControlJointPositions(self, request, context):
+
+        if RobotService._robot is None:
+            logger.error("Robot not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
+
+        if RobotService._allegro_controller is None:
+            logger.error("Allegro hand not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Allegro hand not started"))
+
+        joint_positions = np.array(request.positions)
+
+        arm_joint_positions = joint_positions[:7]
+        hand_joint_positions = joint_positions[7:]
+
+        RobotService._allegro_controller.hand_pose(hand_joint_positions)
+
+        controller_type = "JOINT_IMPEDANCE"
+        controller_cfg = RobotService._deoxys_joint_impedance_controller_cfg
+
+        # Send action to the robot
+        RobotService._robot.control(
+            controller_type=controller_type,
+            action=arm_joint_positions.tolist() + [-1.0],
+            controller_cfg=controller_cfg
+        )
+
+        return service_pb2.Result(ok=service_pb2.Ok())
