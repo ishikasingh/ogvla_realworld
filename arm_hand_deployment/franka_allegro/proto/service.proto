@@ -31,6 +31,8 @@ service FrankaAllegroService{
     // Absolute EE pose (xyz+rpy); delta joint positions.
     rpc ControlArmEEPoseHandDeltaJointPositions(ArmEEPoseHandJointPositions) returns (Result);
 
+    // Absolute EE pose (xyz+rpy); joint positions.
+    rpc ControlArmEEPoseHandJointPositions(ArmEEPoseHandJointPositions) returns (Result);
 }
 
 

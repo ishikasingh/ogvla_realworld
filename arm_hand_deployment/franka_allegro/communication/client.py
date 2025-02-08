@@ -103,3 +103,21 @@ class FrankaAllegroClient(Client):
         else:
             logger.error(f"Error: {result.err.message}")
             return False
+
+    def ControlArmEEPoseHandJointPositions(self, action: Sequence[float]) -> bool:
+        """
+        action: (22,) 6 end effector pose + 16 hand joint positions
+        """
+
+        assert len(action) == 22
+
+        result = self._stub.ControlArmEEPoseHandJointPositions(
+            service_pb2.ArmEEPoseHandJointPositions(
+                pose=action[:6],
+                joint_positions=action[6:],
+            ))
+        if result.HasField("ok"):
+            return True
+        else:
+            logger.error(f"Error: {result.err.message}")
+            return False
