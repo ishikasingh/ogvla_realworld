@@ -9,6 +9,12 @@ class Empty(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
+class GravityVector(_message.Message):
+    __slots__ = ("vector",)
+    VECTOR_FIELD_NUMBER: _ClassVar[int]
+    vector: _containers.RepeatedScalarFieldContainer[float]
+    def __init__(self, vector: _Optional[_Iterable[float]] = ...) -> None: ...
+
 class JointPositions(_message.Message):
     __slots__ = ("positions",)
     POSITIONS_FIELD_NUMBER: _ClassVar[int]

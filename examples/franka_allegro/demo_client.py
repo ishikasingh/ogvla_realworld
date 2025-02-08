@@ -10,10 +10,11 @@ from time import sleep, time
 import numpy as np
 
 from arm_hand_deployment.utils.np_3d_utils import rpy_to_quaternion, quaternion_to_rpy, quaternion_multiply
+from arm_hand_deployment.utils.grav_vec_trans import transform_gravity_vector
 from arm_hand_deployment.utils.client_context import robot_client_context
 
 from arm_hand_deployment.franka_allegro.communication.client import FrankaAllegroClient
-
+from arm_hand_deployment.consts import FRANKA_EE_TO_ALLEGRO
 
 @hydra.main(config_path=CONFIG_PATH, config_name="config", version_base="1.3")
 def main(cfg: DictConfig):
@@ -53,7 +54,8 @@ def main(cfg: DictConfig):
         print(f"Joint positions: {positions}")
         print(f"End effector pose: {ee_pose}")
 
-        target_end_effector_pose = [0.5, 0.1, 0.3,  np.pi, 0, 0]
+        # You may need to change the last value here if you reassembled the hand...
+        target_end_effector_pose = [0.5, 0.1, 0.3, FRANKA_EE_TO_ALLEGRO[0], FRANKA_EE_TO_ALLEGRO[1], FRANKA_EE_TO_ALLEGRO[2]]
 
         # xyz+rpy
         assert client.ArmMoveToEndEffectorPose(target_end_effector_pose)
@@ -62,6 +64,9 @@ def main(cfg: DictConfig):
         ee_pose = client.GetEndEffectorPose()
         print(f"Joint positions: {positions}")
         print(f"End effector pose: {ee_pose}")
+
+        g_hand = transform_gravity_vector(ee_pose)
+        client.SetGravityVector(g_hand)
 
         target_hand_joint_positions = [0., 0.7, 0., 0.4, 0., 0.7, 0., 0.4, 0., 0.7, 0., 0.4, 1.,
                                        0., 0., 0.]

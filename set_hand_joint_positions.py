@@ -21,9 +21,11 @@ target_hand_pose[1]=1.71 #-0.296
 target_hand_pose[5]=1.71 #-0.296
 target_hand_pose[9]=1.71 #-0.296
 
+# Test grav comp
+controller.apply_grav_comp([0.0, 0.0, -9.81])
 
 controller.hand_pose(target_hand_pose)
 
-sleep(5)
+sleep(1)
 
 print(controller.current_joint_pose.position)

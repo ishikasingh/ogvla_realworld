@@ -35,6 +35,25 @@ class FrankaAllegroClient(Client):
     def GetEndEffectorPose(self) -> np.ndarray:
         result = self._stub.GetEndEffectorPose(service_pb2.Empty())
         return np.array(result.pose)
+    
+    def SetGravityVector(self, gravity_vector: Iterable[float]) -> bool:
+        """
+        Sets the gravity vector for gravity compensation.
+        :param gravity_vector: A sequence of 3 floats representing the gravity vector [x, y, z].
+        :return: True if successful, False otherwise.
+        """
+        if len(gravity_vector) != 3:
+            logger.error("Gravity vector must be a list of 3 floats (x, y, z).")
+            return False
+
+        result = self._stub.SetGravityVector(
+            service_pb2.GravityVector(vector=gravity_vector))
+
+        if result.HasField("ok"):
+            return True
+        else:
+            logger.error(f"Error: {result.err.message}")
+            return False
 
     def MoveToJointPositions(self, joint_positions: np.ndarray) -> bool:
         # Convert joint positions to protobuf message format

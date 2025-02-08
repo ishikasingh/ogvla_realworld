@@ -13,6 +13,9 @@ service FrankaAllegroService{
     // Get end effector pose (3 xyz + 3 rpy).
     rpc GetEndEffectorPose(Empty) returns (Pose);
 
+    // Sets the gravity vector for gravity compensation.
+    rpc SetGravityVector(GravityVector) returns (Result);
+
     // Move to specific joint positions (7 arm + 16 hand).
     rpc MoveToJointPositions (JointPositions) returns (Result);
 
@@ -37,6 +40,10 @@ service FrankaAllegroService{
 
 
 message Empty {}
+
+message GravityVector {
+    repeated float vector = 1; // [x, y, z] gravity vector, default [0, 0, -9.81]
+}
 
 message JointPositions {
     repeated float positions = 1;

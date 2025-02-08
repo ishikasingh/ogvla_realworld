@@ -125,6 +125,20 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
         rpy = quaternion_to_rpy(ee_quat)
 
         return service_pb2.Pose(pose=np.concatenate((ee_pos, rpy)))
+    
+    def SetGravityVector(self, request, context):
+        if RobotService._allegro_controller is None:
+            logger.error("Allegro hand not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Allegro hand not started"))
+
+        gravity_vector = list(request.vector)
+
+        # Apply the new gravity vector
+        RobotService._allegro_controller.apply_grav_comp(gravity_vector)
+
+        logger.info(f"Updated Gravity Vector: {gravity_vector}")
+
+        return service_pb2.Result(ok=service_pb2.Ok())
 
     def MoveToJointPositions(self, request, context):
         if RobotService._robot is None:
