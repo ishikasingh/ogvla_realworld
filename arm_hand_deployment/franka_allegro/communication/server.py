@@ -174,15 +174,17 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
             # there seems to be some friction between joint 12 and the 3d printed link.
 
             delta_hand = np.abs(
-                hand_current_positions - np.array(hand_target_joint_positions))
-            delta_hand_12 = delta_hand[12]
-            print(f"delta of joint 12: {delta_hand_12}")
+                hand_current_positions - hand_target_joint_positions)
+            print(
+                f"[Joint 12] Current:{hand_current_positions[12]:.4f}\tTarget:{hand_target_joint_positions[12]:.4f}\tDelta:{delta_hand[12]:.4f}")
             delta_hand[12] = 0
+
             # print(delta_hand)
             delta_hand = np.max(delta_hand)
             hand_reached = delta_hand < threshold_hand_pos
 
-            print(delta_arm, delta_hand)
+            print(
+                f"Max delta arm:{delta_arm:.4f}\tMax delta hand:{delta_hand:.4f}")
 
             if arm_reached and hand_reached and cnt > 20:
                 break
@@ -345,11 +347,14 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
 
             delta_hand = np.abs(
                 hand_current_positions - hand_target_joint_positions)
-            delta_hand_12 = delta_hand[12]
-            print(f"delta of joint 12: {delta_hand_12}")
+            print(
+                f"[Joint 12] Current:{hand_current_positions[12]:.4f}\tTarget:{hand_target_joint_positions[12]:.4f}\tDelta:{delta_hand[12]:.4f}")
             delta_hand[12] = 0
-            # print(delta_hand)
+
             delta_hand = np.max(delta_hand)
+
+            print(f"Max delta hand:{delta_hand:.4f}")
+
             hand_reached = delta_hand < threshold_hand_pos
 
             if hand_reached and cnt > 20:
@@ -360,9 +365,8 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
                 logger.warning(warning_message)
                 return service_pb2.Result(err=service_pb2.Err(message=warning_message))
 
-            if not hand_reached:
-                RobotService._allegro_controller.hand_pose(
-                    hand_target_joint_positions)
+            RobotService._allegro_controller.hand_pose(
+                hand_target_joint_positions)
 
             sleep(0.01)
             cnt += 1
@@ -416,8 +420,6 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
         controller_type = "OSC_POSE"
         controller_cfg = RobotService._deoxys_osc_controller_cfg_no_delta
 
-        # Compute delta translation and rotation from the request
-
         ee_pose = np.array(request.pose)
 
         ee_trans = ee_pose[:3]
@@ -448,15 +450,13 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
             logger.error("Allegro hand not started")
             return service_pb2.Result(err=service_pb2.Err(message="Allegro hand not started"))
 
-        hand_delta_joint_positions = np.array(
+        hand_joint_positions = np.array(
             request.joint_positions)
         RobotService._allegro_controller.hand_pose(
-            hand_delta_joint_positions, absolute=True)
+            hand_joint_positions, absolute=True)
 
         controller_type = "OSC_POSE"
         controller_cfg = RobotService._deoxys_osc_controller_cfg_no_delta
-
-        # Compute delta translation and rotation from the request
 
         ee_pose = np.array(request.pose)
 
