@@ -33,7 +33,7 @@ def main(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
 
     # Load initial joint positions
-    initial_joint_positions_path = "/home/yiyang/hsc/data/initial_joint_positions.npy"
+    initial_joint_positions_path = "/home/yiyang/hsc/data/debug/initial_joint_positions.npy"
 
     initial_joint_positions_dict = np.load(
         initial_joint_positions_path, allow_pickle=True).item()
@@ -44,7 +44,7 @@ def main(cfg: DictConfig):
         'arm_joint_positions']
 
     # Load actions
-    actions_path = '/home/yiyang/hsc/data/actions.npy'
+    actions_path = '/home/yiyang/hsc/data/debug/actions.npy'
     actions = np.load(actions_path)
 
     port: int = int(cfg.rpc_port)
