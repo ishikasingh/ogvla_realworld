@@ -293,7 +293,7 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
 
         # Compute IK to get joint trajectory to the target end-effector pose
         joint_traj, debug_info = ik_wrapper.ik_trajectory_to_target_pose(
-            target_position, target_mat, current_joint_positions, num_points=20
+            target_position, target_mat, current_joint_positions, num_points=100
         )
 
         if joint_traj is None:
@@ -414,7 +414,7 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
             hand_delta_joint_positions, absolute=False)
 
         controller_type = "OSC_POSE"
-        controller_cfg = RobotService._deoxys_osc_controller_cfg
+        controller_cfg = RobotService._deoxys_osc_controller_cfg_no_delta
 
         # Compute delta translation and rotation from the request
 
