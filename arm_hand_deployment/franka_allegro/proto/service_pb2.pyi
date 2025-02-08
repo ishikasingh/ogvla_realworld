@@ -21,6 +21,14 @@ class Pose(_message.Message):
     pose: _containers.RepeatedScalarFieldContainer[float]
     def __init__(self, pose: _Optional[_Iterable[float]] = ...) -> None: ...
 
+class ArmEEPoseHandJointPositions(_message.Message):
+    __slots__ = ("pose", "joint_positions")
+    POSE_FIELD_NUMBER: _ClassVar[int]
+    JOINT_POSITIONS_FIELD_NUMBER: _ClassVar[int]
+    pose: _containers.RepeatedScalarFieldContainer[float]
+    joint_positions: _containers.RepeatedScalarFieldContainer[float]
+    def __init__(self, pose: _Optional[_Iterable[float]] = ..., joint_positions: _Optional[_Iterable[float]] = ...) -> None: ...
+
 class Result(_message.Message):
     __slots__ = ("ok", "err")
     OK_FIELD_NUMBER: _ClassVar[int]

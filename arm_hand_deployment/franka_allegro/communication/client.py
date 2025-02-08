@@ -5,7 +5,7 @@ import numpy as np
 
 from loguru import logger
 
-from typing import Iterable
+from typing import Iterable, Sequence
 
 
 class FrankaAllegroClient(Client):
@@ -80,6 +80,24 @@ class FrankaAllegroClient(Client):
         """
         result = self._stub.ControlJointPositions(
             service_pb2.JointPositions(positions=action))
+        if result.HasField("ok"):
+            return True
+        else:
+            logger.error(f"Error: {result.err.message}")
+            return False
+
+    def ControlArmEEPoseHandDeltaJointPositions(self, action: Sequence[float]) -> bool:
+        """
+        action: (22,) 6 end effector pose + 16 hand joint positions (delta)
+        """
+
+        assert len(action) == 22
+
+        result = self._stub.ControlArmEEPoseHandDeltaJointPositions(
+            service_pb2.ArmEEPoseHandJointPositions(
+                pose=action[:6],
+                joint_positions=action[6:],
+            ))
         if result.HasField("ok"):
             return True
         else:

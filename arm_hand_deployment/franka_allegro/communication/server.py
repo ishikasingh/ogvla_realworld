@@ -13,6 +13,8 @@ from arm_hand_deployment.utils.np_3d_utils import (
 
 from typing import Optional, Dict, Any, List
 
+from copy import deepcopy
+
 from loguru import logger
 
 from time import sleep, time
@@ -35,6 +37,8 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
     _fci_ip: Optional[str] = None
     _deoxys_general_cfg_file: Optional[str] = None
     _deoxys_osc_controller_cfg: Optional[Dict[str, Any]] = None
+    # absolute OSC
+    _deoxys_osc_controller_cfg_no_delta: Optional[Dict[str, Any]] = None
     _deoxys_joint_position_controller_cfg: Optional[Dict[str, Any]] = None
     _deoxys_joint_impedance_controller_cfg: Optional[Dict[str, Any]] = None
 
@@ -55,6 +59,9 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
         if RobotService._deoxys_osc_controller_cfg is None:
             RobotService._deoxys_osc_controller_cfg = YamlConfig(
                 deoxys_osc_controller_cfg_file).as_easydict()
+            RobotService._deoxys_osc_controller_cfg_no_delta = deepcopy(
+                RobotService._deoxys_osc_controller_cfg)
+            RobotService._deoxys_osc_controller_cfg_no_delta.is_delta = False
 
         if RobotService._deoxys_joint_position_controller_cfg is None:
             RobotService._deoxys_joint_position_controller_cfg = YamlConfig(
@@ -389,4 +396,44 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
             controller_cfg=controller_cfg
         )
 
+        return service_pb2.Result(ok=service_pb2.Ok())
+
+    def ControlArmEEPoseHandDeltaJointPositions(self, request, context):
+
+        if RobotService._robot is None:
+            logger.error("Robot not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
+
+        if RobotService._allegro_controller is None:
+            logger.error("Allegro hand not started")
+            return service_pb2.Result(err=service_pb2.Err(message="Allegro hand not started"))
+
+        hand_delta_joint_positions = np.array(
+            request.joint_positions)
+        RobotService._allegro_controller.hand_pose(
+            hand_delta_joint_positions, absolute=False)
+
+        controller_type = "OSC_POSE"
+        controller_cfg = RobotService._deoxys_osc_controller_cfg
+
+        # Compute delta translation and rotation from the request
+
+        ee_pose = np.array(request.pose)
+
+        ee_trans = ee_pose[:3]
+        ee_rpy = ee_pose[3:]
+        ee_quat = rpy_to_quaternion(ee_rpy)
+
+        action_pos = ee_trans
+        action_ori = transform_utils.quat2axisangle(ee_quat)
+
+        # Construct the action vector
+        action = np.concatenate((action_pos, action_ori, [-1.0]))
+
+        # Send action to the robot
+        RobotService._robot.control(
+            controller_type=controller_type,
+            action=action,
+            controller_cfg=controller_cfg
+        )
         return service_pb2.Result(ok=service_pb2.Ok())
