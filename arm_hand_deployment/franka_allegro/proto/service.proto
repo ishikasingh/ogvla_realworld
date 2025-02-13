@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+service FrankaAllegroService{
+    // RPC to start the robot
+    rpc Start (Empty) returns (Result);
+
+    // RPC to stop the robot
+    rpc Stop (Empty) returns (Result);
+
+    // Get joint positions (7 arm + 16 hand).
+    rpc GetJointPositions(Empty) returns (JointPositions);
+
+    // Get end effector pose (3 xyz + 3 rpy).
+    rpc GetEndEffectorPose(Empty) returns (Pose);
+
+    // Sets the gravity vector for gravity compensation.
+    rpc SetGravityVector(GravityVector) returns (Result);
+
+    // Move to specific joint positions (7 arm + 16 hand).
+    rpc MoveToJointPositions (JointPositions) returns (Result);
+
+    // Move to specific joint positions (7 arm joints).
+    rpc ArmMoveToJointPositions(JointPositions) returns (Result);
+
+    // Move to a specific end effector pose (3 xyz + 3 rpy).
+    rpc ArmMoveToEndEffectorPose(Pose) returns (Result);
+
+    // Move to specific joint positions (16 hand joints).
+    rpc HandMoveToJointPositions(JointPositions) returns (Result);
+
+    // (7 arm + 16 hand).
+    rpc ControlJointPositions(JointPositions) returns (Result);
+
+    // Absolute EE pose (xyz+rpy); delta joint positions.
+    rpc ControlArmEEPoseHandDeltaJointPositions(ArmEEPoseHandJointPositions) returns (Result);
+
+    // Absolute EE pose (xyz+rpy); joint positions.
+    rpc ControlArmEEPoseHandJointPositions(ArmEEPoseHandJointPositions) returns (Result);
+}
+
+
+message Empty {}
+
+message GravityVector {
+    repeated float vector = 1; // [x, y, z] gravity vector, default [0, 0, -9.81]
+}
+
+message JointPositions {
+    repeated float positions = 1;
+}
+
+message Pose {
+    repeated float pose = 1; // xyz and rpy
+}
+
+message ArmEEPoseHandJointPositions {
+    repeated float pose = 1;
+    repeated float joint_positions = 2;
+}
+
+
+message Result {
+    oneof result {
+        Ok ok = 1;
+        Err err = 2;
+    }
+}
+
+message Ok {}
+
+
+message Err {
+    string message = 1;
+}

@@ -9,6 +9,12 @@ class Empty(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
+class GravityVector(_message.Message):
+    __slots__ = ("vector",)
+    VECTOR_FIELD_NUMBER: _ClassVar[int]
+    vector: _containers.RepeatedScalarFieldContainer[float]
+    def __init__(self, vector: _Optional[_Iterable[float]] = ...) -> None: ...
+
 class JointPositions(_message.Message):
     __slots__ = ("positions",)
     POSITIONS_FIELD_NUMBER: _ClassVar[int]
@@ -21,23 +27,13 @@ class Pose(_message.Message):
     pose: _containers.RepeatedScalarFieldContainer[float]
     def __init__(self, pose: _Optional[_Iterable[float]] = ...) -> None: ...
 
-class DeltaPose(_message.Message):
-    __slots__ = ("delta_pose",)
-    DELTA_POSE_FIELD_NUMBER: _ClassVar[int]
-    delta_pose: _containers.RepeatedScalarFieldContainer[float]
-    def __init__(self, delta_pose: _Optional[_Iterable[float]] = ...) -> None: ...
-
-class GripperAction(_message.Message):
-    __slots__ = ("value",)
-    VALUE_FIELD_NUMBER: _ClassVar[int]
-    value: float
-    def __init__(self, value: _Optional[float] = ...) -> None: ...
-
-class GripperMessage(_message.Message):
-    __slots__ = ("is_grasped",)
-    IS_GRASPED_FIELD_NUMBER: _ClassVar[int]
-    is_grasped: bool
-    def __init__(self, is_grasped: bool = ...) -> None: ...
+class ArmEEPoseHandJointPositions(_message.Message):
+    __slots__ = ("pose", "joint_positions")
+    POSE_FIELD_NUMBER: _ClassVar[int]
+    JOINT_POSITIONS_FIELD_NUMBER: _ClassVar[int]
+    pose: _containers.RepeatedScalarFieldContainer[float]
+    joint_positions: _containers.RepeatedScalarFieldContainer[float]
+    def __init__(self, pose: _Optional[_Iterable[float]] = ..., joint_positions: _Optional[_Iterable[float]] = ...) -> None: ...
 
 class Result(_message.Message):
     __slots__ = ("ok", "err")
