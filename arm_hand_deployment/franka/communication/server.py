@@ -119,56 +119,34 @@ class RobotService(service_pb2_grpc.FrankaService):
             logger.error("Robot not started")
             return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
 
-        try:
-            # Define the controller type and configuration for the arm
-            controller_type = "JOINT_POSITION"
-            controller_cfg = RobotService._deoxys_joint_position_controller_cfg
+        # Define the controller type and configuration for the arm
+        controller_type = "JOINT_IMPEDANCE"
+        controller_cfg = RobotService._deoxys_joint_impedance_controller_cfg
 
-            joint_positions = list(request.positions)
+        joint_positions = list(request.positions)
+        assert len(joint_positions) == 7
 
-            assert len(joint_positions) == 7
+        # Franka arm joints
+        arm_target_joint_positions = np.array(joint_positions[:7])
+        arm_initial_positions = np.array(RobotService._robot.last_q[:7])
 
-            # Maximum number of attempts to reach the target positions
-            max_attempts = 300
-            cnt = 0
+        # Interpolation parameters
+        num_steps = 100  # Number of interpolation steps
 
-            threshold_arm = 1e-3
+        # Generate interpolation steps
+        interpolated_positions = np.linspace(
+            arm_initial_positions, arm_target_joint_positions, num_steps)
 
-            # Control loop to move both the arm and the hand to their target positions
-            while True:
-                # Check the current joint positions of the arm
-                arm_current_positions = RobotService._robot.last_q
+        for arm_interpolated_positions in interpolated_positions:
+            arm_action = arm_interpolated_positions.tolist() + [-1.0]
 
-                # Break the loop if the joints are within a small tolerance of the target for both arm and hand
-                delta_arm = np.max(
-                    np.abs(np.array(arm_current_positions) - np.array(joint_positions)))
-                arm_reached = delta_arm < threshold_arm
+            RobotService._robot.control(
+                controller_type=controller_type,
+                action=arm_action,
+                controller_cfg=controller_cfg,
+            )
 
-                if arm_reached:
-                    break
-
-                if cnt >= max_attempts:
-                    warning_message = "Failed to reach target joint positions within the maximum attempts."
-                    logger.warning(warning_message)
-                    return service_pb2.Result(err=service_pb2.Err(message=warning_message))
-
-                RobotService._robot.arm_control(
-                    controller_type=controller_type,
-                    action=joint_positions,
-                    controller_cfg=controller_cfg,
-                )
-
-                # Optional: Add a small sleep to prevent excessive command frequency
-                sleep(0.01)
-                cnt += 1
-
-            return service_pb2.Result(ok=service_pb2.Ok())
-
-        except Exception as e:
-            context.set_details(f"Failed to move to joint positions: {e}")
-            context.set_code(grpc.StatusCode.INTERNAL)
-            logger.error(f"MoveToJointPositions error: {e}")
-            return service_pb2.Result(err=service_pb2.Err(message="Failed to move to joint positions"))
+        return service_pb2.Result(ok=service_pb2.Ok())
 
     def MoveToEndEffectorPose(self, request, context):
         if RobotService._robot is None:
