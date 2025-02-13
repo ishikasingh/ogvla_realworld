@@ -1,46 +1,42 @@
-# franka
+# Franka  
 
-franka arm + franka gripper
+Franka Arm + Franka Gripper  
 
-## 依赖
+## Dependencies  
 
-- [fork](https://github.com/hesic73/deoxys_control) of [deoxys](https://github.com/UT-Austin-RPL/deoxys_control)
+- [Fork](https://github.com/hesic73/deoxys_control) of [Deoxys](https://github.com/UT-Austin-RPL/deoxys_control)  
 
+## Quickstart  
 
-## Quickstart
+### Workstation (the machine running the real-time kernel for controlling Franka)  
 
-### workstation（装real-time kernel控制franka的那台机器）
-
-在两个terminal启动arm和gripper的控制进程：
+Start the control processes for the arm and gripper in two terminals:  
 
 ```bash
-bash scripts/franka/auto_gripper.sh
+bash scripts/franka/auto_arm.sh
 ```
 
 ```bash
 bash scripts/franka/auto_gripper.sh
 ```
 
-然后启动server：
+Then start the server:  
 
 ```bash
-# 这个环境最主要就是装deoxys
+# This environment mainly installs Deoxys
 conda activate hsc
 python run_server.py
 ```
 
-### client
+### Client  
 
-可以参考 examples里面的代码
-
+Refer to the example code in the `examples` directory:  
 
 ```bash
 conda activate deploy
 python examples/franka/demo_client.py
 ```
 
+## API  
 
-## API
-
-参考`arm_hand_deployment/franka/proto/service.proto`的注释和`examples/franka`中的用法
-
+Refer to the comments in `arm_hand_deployment/franka/proto/service.proto` and usage examples in `examples/franka`.
