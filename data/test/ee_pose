@@ -1,0 +1,14 @@
+L500 Depth Sensor
+RGB Camera
+f1421749 [ 640x480  p[328.753 244.225]  f[597.253 597.451]  Brown Conrady [0.172072 -0.510695 -0.00102113 0.00108878 0.472036] ]
+L500 Depth Sensor
+RGB Camera
+f1421370 [ 640x480  p[333.294 245.568]  f[601.388 601.716]  Brown Conrady [0.142883 -0.487905 1.28733e-05 0.00032947 0.447273] ]
+> /home/yiyang/hsc/deploy/examples/franka/demo_delta_ee_control_with_perception.py(79)main()
+-> ee_pose = client.GetEndEffectorPose()
+(Pdb) c
+Joint positions: [ 0.01676683 -0.17939405  0.05736827 -2.55421948 -0.03617189  2.39224315
+  0.81522787  0.08003716]
+End effector pose: [ 0.44138834  0.02846137  0.23045684  3.10678601 -0.01757723  0.07004639]
+Execution time of execute: 1.0556 seconds
+--------------------------------------------
