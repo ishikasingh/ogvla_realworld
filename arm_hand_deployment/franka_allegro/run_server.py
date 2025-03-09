@@ -17,6 +17,15 @@ from loguru import logger
 
 import os
 
+import rospy
+import signal
+
+
+def shutdown_handler(signum, frame):
+    logger.info('Shutting down due to SIGINT')
+    rospy.signal_shutdown("Server shutdown")
+    os._exit(0)
+
 
 def run_server(cfg: DictConfig):
     port: int = int(cfg.rpc_port)
@@ -43,4 +52,7 @@ def run_server(cfg: DictConfig):
     server.add_insecure_port(f"[::]:{port}")
     server.start()
     logger.info(f"Server started, listening on {port}")
+
+    signal.signal(signal.SIGINT, shutdown_handler)
+
     server.wait_for_termination()
