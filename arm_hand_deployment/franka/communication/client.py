@@ -37,6 +37,9 @@ class FrankaClient(Client):
         return np.array(result.pose)
 
     def MoveToJointPositions(self, positions: Iterable[float], num_interpolation_steps: Optional[int] = None) -> bool:
+        if num_interpolation_steps is None:
+            num_interpolation_steps = -1
+        # -1 means default.
         result = self._stub.MoveToJointPositions(
             service_pb2.MoveToJointPositionsRequest(positions=positions, num_interpolation_steps=num_interpolation_steps))
         if result.HasField("ok"):
