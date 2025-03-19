@@ -56,7 +56,7 @@ class FrankaServiceStub(object):
                 _registered_method=True)
         self.MoveToJointPositions = channel.unary_unary(
                 '/FrankaService/MoveToJointPositions',
-                request_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.JointPositions.SerializeToString,
+                request_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.MoveToJointPositionsRequest.SerializeToString,
                 response_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
                 _registered_method=True)
         self.MoveToEndEffectorPose = channel.unary_unary(
@@ -194,7 +194,7 @@ def add_FrankaServiceServicer_to_server(servicer, server):
             ),
             'MoveToJointPositions': grpc.unary_unary_rpc_method_handler(
                     servicer.MoveToJointPositions,
-                    request_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.JointPositions.FromString,
+                    request_deserializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.MoveToJointPositionsRequest.FromString,
                     response_serializer=arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.SerializeToString,
             ),
             'MoveToEndEffectorPose': grpc.unary_unary_rpc_method_handler(
@@ -361,7 +361,7 @@ class FrankaService(object):
             request,
             target,
             '/FrankaService/MoveToJointPositions',
-            arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.JointPositions.SerializeToString,
+            arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.MoveToJointPositionsRequest.SerializeToString,
             arm__hand__deployment_dot_franka_dot_proto_dot_service__pb2.Result.FromString,
             options,
             channel_credentials,

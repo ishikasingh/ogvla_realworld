@@ -402,6 +402,7 @@ class RobotService(service_pb2_grpc.FrankaAllegroService):
         arm_joint_positions = joint_positions[:7]
         hand_joint_positions = joint_positions[7:]
 
+        # print(RobotService._allegro_controller.current_joint_pose.position)
         RobotService._allegro_controller.hand_pose(hand_joint_positions)
 
         controller_type = "JOINT_IMPEDANCE"
