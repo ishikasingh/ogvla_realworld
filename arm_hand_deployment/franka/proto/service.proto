@@ -14,7 +14,7 @@ service FrankaService{
     rpc GetEndEffectorPose(Empty) returns (Pose);
 
     // Move to specific joint positions (7 arm joints).
-    rpc MoveToJointPositions(JointPositions) returns (Result);
+    rpc MoveToJointPositions(MoveToJointPositionsRequest) returns (Result);
 
     // Move to a specific end effector pose (3 xyz + 3 rpy).
     rpc MoveToEndEffectorPose(Pose) returns (Result);
@@ -35,6 +35,11 @@ service FrankaService{
 
 
 message Empty {}
+
+message MoveToJointPositionsRequest {
+    repeated float positions = 1;
+    int32 num_interpolation_steps = 2;
+}
 
 message JointPositions {
     repeated float positions = 1;

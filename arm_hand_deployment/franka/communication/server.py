@@ -133,6 +133,10 @@ class RobotService(service_pb2_grpc.FrankaService):
         # Interpolation parameters
         num_steps = 100  # Number of interpolation steps
 
+        if request.num_interpolation_steps > 0:
+            num_steps = request.num_interpolation_steps
+            print(f"[MoveToJointPositions] num_steps={num_steps}")
+
         # Generate interpolation steps
         interpolated_positions = np.linspace(
             arm_initial_positions, arm_target_joint_positions, num_steps)

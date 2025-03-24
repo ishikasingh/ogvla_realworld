@@ -5,7 +5,7 @@ import numpy as np
 
 from loguru import logger
 
-from typing import Iterable
+from typing import Iterable, Optional
 
 
 class FrankaClient(Client):
@@ -36,9 +36,12 @@ class FrankaClient(Client):
         result = self._stub.GetEndEffectorPose(service_pb2.Empty())
         return np.array(result.pose)
 
-    def MoveToJointPositions(self, positions: Iterable[float]) -> bool:
+    def MoveToJointPositions(self, positions: Iterable[float], num_interpolation_steps: Optional[int] = None) -> bool:
+        if num_interpolation_steps is None:
+            num_interpolation_steps = -1
+        # -1 means default.
         result = self._stub.MoveToJointPositions(
-            service_pb2.JointPositions(positions=positions))
+            service_pb2.MoveToJointPositionsRequest(positions=positions, num_interpolation_steps=num_interpolation_steps))
         if result.HasField("ok"):
             return True
         else:

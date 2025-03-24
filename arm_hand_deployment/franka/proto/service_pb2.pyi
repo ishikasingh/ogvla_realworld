@@ -9,6 +9,14 @@ class Empty(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
+class MoveToJointPositionsRequest(_message.Message):
+    __slots__ = ("positions", "num_interpolation_steps")
+    POSITIONS_FIELD_NUMBER: _ClassVar[int]
+    NUM_INTERPOLATION_STEPS_FIELD_NUMBER: _ClassVar[int]
+    positions: _containers.RepeatedScalarFieldContainer[float]
+    num_interpolation_steps: int
+    def __init__(self, positions: _Optional[_Iterable[float]] = ..., num_interpolation_steps: _Optional[int] = ...) -> None: ...
+
 class JointPositions(_message.Message):
     __slots__ = ("positions",)
     POSITIONS_FIELD_NUMBER: _ClassVar[int]
