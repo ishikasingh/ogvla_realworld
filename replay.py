@@ -64,6 +64,7 @@ def main(cfg: DictConfig):
     server_ip: str = cfg.server_ip
 
     logger.info(f"Connecting to server {server_ip}:{port}")
+    import ipdb;ipdb.set_trace()
 
     with robot_client_context(server_ip, port, FrankaAllegroClient) as client:
         client: FrankaAllegroClient

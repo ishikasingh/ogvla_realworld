@@ -21,18 +21,20 @@ import os
 from real_world_perception.cameras import *
 from real_world_perception.read_real_data import get_camera_image, get_pointcloud_multiview
 
-def test_camera_image():
+def get_all_camera_images():
     file_dir = 'data'
     scene = 'test'
     os.makedirs(f'{file_dir}/{scene}', exist_ok=True)
 
-    cams = [LEFT_CAMERA, RIGHT_CAMERA]
+    cams = [RIGHT_CAMERA] #LEFT_CAMERA, 
+    cam_images = []
     for cam in cams:
         color, depth = get_camera_image(cam)
         color = cv2.cvtColor(color, cv2.COLOR_BGR2RGB)
         cv2.imwrite(f'{file_dir}/{scene}/color_{cam}.png', color)
         cv2.imwrite(f'{file_dir}/{scene}/depth_{cam}.png', depth)
-
+        cam_images.append((color, depth))
+    return cam_images
 
 def test_pointcloud_multiview():
     file_dir = 'data'
@@ -72,13 +74,19 @@ def main(cfg: DictConfig):
 
         # 7 joint positions for the arm + 1 for the gripper (width of the gripper)
         positions = client.GetJointPositions()
-        test_camera_image()
-        import pdb; pdb.set_trace()
-
+        
         # xyz+rpy
-        ee_pose = client.GetEndEffectorPose()
-        print(f"Joint positions: {positions}")
-        print(f"End effector pose: {ee_pose}")
+        for i in range(10):
+            data = {}
+            cam_images = get_all_camera_images()
+            data['images'] = cam_images
+            ee_pose = client.GetEndEffectorPose()
+            data['ee_pose'] = ee_pose
+            print(f"End effector pose: {ee_pose}")
+            # save data
+            np.save(f'data/eval/data_{i}.npy', data)
+            import pdb; pdb.set_trace()
+
 
         target_joint_positions = [
             0.09162008114028396,
