@@ -74,6 +74,16 @@ def main(cfg: DictConfig):
 
         # 7 joint positions for the arm + 1 for the gripper (width of the gripper)
         positions = client.GetJointPositions()
+        target_joint_positions = [
+            0.09162008114028396,
+            -0.19826458111314524,
+            -0.01990020486871322,
+            -2.4732269941140346,
+            -0.01307073642274261,
+            2.30396583422025,
+            0.8480939705504309,
+        ]
+        assert client.MoveToJointPositions(target_joint_positions)
         
         # xyz+rpy
         for i in range(10):
@@ -85,20 +95,15 @@ def main(cfg: DictConfig):
             print(f"End effector pose: {ee_pose}")
             # save data
             np.save(f'data/eval/data_{i}.npy', data)
+            # # Get keyboard input from user
+            # key = input("Press Enter to continue to next frame, or 'q' to quit: ")
+            # if key.lower() == 'q':
+            #     break
+
             import pdb; pdb.set_trace()
 
 
-        target_joint_positions = [
-            0.09162008114028396,
-            -0.19826458111314524,
-            -0.01990020486871322,
-            -2.4732269941140346,
-            -0.01307073642274261,
-            2.30396583422025,
-            0.8480939705504309,
-        ]
-
-        assert client.MoveToJointPositions(target_joint_positions)
+        
 
         @timing_decorator
         def execute(action):

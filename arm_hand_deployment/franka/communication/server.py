@@ -152,7 +152,7 @@ class RobotService(service_pb2_grpc.FrankaService):
 
         return service_pb2.Result(ok=service_pb2.Ok())
 
-    def MoveToEndEffectorPose(self, request, context):
+    def MoveToEndEffectorPose(self, request, context, return_joint_traj=False):
         if RobotService._robot is None:
             logger.error("Robot not started")
             return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
@@ -187,6 +187,10 @@ class RobotService(service_pb2_grpc.FrankaService):
 
             # Interpolate the trajectory for smooth motion
             joint_traj = ik_wrapper.interpolate_dense_traj(joint_traj)
+            import pdb; pdb.set_trace()
+            
+            if return_joint_traj:
+                return joint_traj
 
             # Function to execute the arm movement using the IK result
             def execute_ik_result():
@@ -197,9 +201,16 @@ class RobotService(service_pb2_grpc.FrankaService):
                         action=action,
                         controller_cfg=controller_cfg,
                     )
-
             # Execute the arm movement
             execute_ik_result()
+            
+
+            # action = joint_pos.tolist()
+            # RobotService._robot.arm_control(
+            #     controller_type=controller_type,
+            #     action=action,
+            #     controller_cfg=controller_cfg,
+            # )
 
             logger.info("MoveToEndEffectorPose executed successfully")
             return service_pb2.Result(ok=service_pb2.Ok())
