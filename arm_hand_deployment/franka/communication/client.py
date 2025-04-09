@@ -48,9 +48,10 @@ class FrankaClient(Client):
             logger.error(f"Error: {result.err.message}")
             return False
 
-    def MoveToEndEffectorPose(self, pose: Iterable[float]) -> bool:
+    def MoveToEndEffectorPose(self, pose: Iterable[float], return_joint_traj: Optional[bool] = None) -> bool:
         result = self._stub.MoveToEndEffectorPose(
-            service_pb2.Pose(pose=pose))
+            service_pb2.Pose(pose=pose, return_joint_traj=return_joint_traj))
+        import pdb; pdb.set_trace()
         if result.HasField("ok"):
             return True
         else:

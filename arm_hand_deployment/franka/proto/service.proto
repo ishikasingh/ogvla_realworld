@@ -47,6 +47,7 @@ message JointPositions {
 
 message Pose {
     repeated float pose = 1; // xyz and rpy
+    bool return_joint_traj = 2; // if true, return joint trajectory
 }
 
 message DeltaPose {

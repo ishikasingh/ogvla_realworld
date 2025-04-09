@@ -24,10 +24,12 @@ class JointPositions(_message.Message):
     def __init__(self, positions: _Optional[_Iterable[float]] = ...) -> None: ...
 
 class Pose(_message.Message):
-    __slots__ = ("pose",)
+    __slots__ = ("pose", "return_joint_traj")
     POSE_FIELD_NUMBER: _ClassVar[int]
+    RETURN_JOINT_TRAJ_FIELD_NUMBER: _ClassVar[int]
     pose: _containers.RepeatedScalarFieldContainer[float]
-    def __init__(self, pose: _Optional[_Iterable[float]] = ...) -> None: ...
+    return_joint_traj: bool
+    def __init__(self, pose: _Optional[_Iterable[float]] = ..., return_joint_traj: _Optional[bool] = ...) -> None: ...
 
 class DeltaPose(_message.Message):
     __slots__ = ("delta_pose",)

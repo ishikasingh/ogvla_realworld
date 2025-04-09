@@ -152,7 +152,7 @@ class RobotService(service_pb2_grpc.FrankaService):
 
         return service_pb2.Result(ok=service_pb2.Ok())
 
-    def MoveToEndEffectorPose(self, request, context, return_joint_traj=False):
+    def MoveToEndEffectorPose(self, request, context):
         if RobotService._robot is None:
             logger.error("Robot not started")
             return service_pb2.Result(err=service_pb2.Err(message="Robot not started"))
@@ -189,7 +189,7 @@ class RobotService(service_pb2_grpc.FrankaService):
             joint_traj = ik_wrapper.interpolate_dense_traj(joint_traj)
             import pdb; pdb.set_trace()
             
-            if return_joint_traj:
+            if request.return_joint_traj:
                 return joint_traj
 
             # Function to execute the arm movement using the IK result
