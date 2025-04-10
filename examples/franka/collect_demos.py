@@ -20,6 +20,7 @@ import os
 
 from real_world_perception.cameras import *
 from real_world_perception.read_real_data import get_camera_image, get_pointcloud_multiview
+import pyrealsense2 as rs
 
 
 from deoxys.utils.ik_utils import IKWrapper
@@ -31,6 +32,133 @@ from arm_hand_deployment.utils.np_3d_utils import (
     quaternion_inverse,
     rpy_to_rotation_matrix,
     quaternion_slerp)
+
+
+class CameraStream:
+    def __init__(self):
+        self.cam_serial = RIGHT_CAMERA
+        self.is_running = False
+        self.queue = Queue()
+        self.pipeline = None
+        
+    def start(self):
+        self.is_running = True
+        self.thread = threading.Thread(target=self._capture_stream)
+        self.thread.daemon = True
+        self.thread.start()
+        
+    def stop(self):
+        self.is_running = False
+        if self.pipeline:
+            self.pipeline.stop()
+        self.thread.join()
+        
+    def _capture_stream(self):
+        # Initialize RealSense pipeline
+        pipeline = rs.pipeline()
+        config = rs.config()
+        config.enable_device(self.cam_serial)
+        
+        # Configure streams
+        config.enable_stream(rs.stream.depth, rs.format.z16, 30)
+        config.enable_stream(rs.stream.color, rs.format.rgb8, 30)
+        
+        # Start streaming
+        profile = pipeline.start(config)
+        
+        # Setup alignment
+        align_to = rs.stream.color
+        align = rs.align(align_to)
+        
+        # Configure camera settings
+        color_sensor = pipeline.get_active_profile().get_device().query_sensors()[1]
+        color_sensor.set_option(rs.option.exposure, 1000)
+        
+        # Main capture loop
+        while self.is_running:
+            frames = pipeline.wait_for_frames()
+            aligned_frames = align.process(frames)
+            
+            depth_frame = aligned_frames.get_depth_frame()
+            color_frame = aligned_frames.get_color_frame()
+            
+            if not depth_frame or not color_frame:
+                continue
+                
+            # Convert to numpy arrays
+            color_image = np.asanyarray(color_frame.get_data())
+            depth_image = np.asanyarray(depth_frame.get_data())
+            
+            timestamp = time.time()
+            self.queue.put({
+                'timestamp': timestamp,
+                'color': color_image,
+                'depth': depth_image
+            })
+            
+        pipeline.stop()
+
+
+def get_camera_image(cam): # L515 or D435
+    pipeline = rs.pipeline()
+    config = rs.config()
+    config.enable_device(cam)
+
+    pipeline_wrapper = rs.pipeline_wrapper(pipeline)
+    pipeline_profile = config.resolve(pipeline_wrapper)
+    device = pipeline_profile.get_device()
+
+    found_rgb = False
+    for s in device.sensors:
+        print(s.get_info(rs.camera_info.name))
+        if s.get_info(rs.camera_info.name) == 'RGB Camera':
+            found_rgb = True
+            break
+    if not found_rgb:
+        print("The demo requires Depth camera with Color sensor")
+        exit(0)
+        
+    config.enable_stream(rs.stream.depth, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, rs.format.rgb8, 30)
+
+    profile = pipeline.start(config)
+    stream = profile.get_streams()  
+    # for s in stream:
+    #     intr = s.as_video_stream_profile().get_intrinsics()
+    #     print(cam, intr)
+
+    color_sensor = pipeline.get_active_profile().get_device().query_sensors()[1]
+    color_sensor.set_option(rs.option.exposure, 1000)
+
+    depth_sensor = profile.get_device().first_depth_sensor()
+    depth_scale = depth_sensor.get_depth_scale()
+    # print("Depth Scale: ", depth_scale)
+
+    # We will be removing the background of objects more than clipping_distance_in_meters meters away
+    clipping_distance_in_meters = 2 # 2 meter
+    clipping_distance = clipping_distance_in_meters / depth_scale
+
+    align_to = rs.stream.color
+    align = rs.align(align_to)
+
+    for _ in range(30):
+        pipeline.wait_for_frames() 
+
+    frames = pipeline.wait_for_frames()
+    aligned_frames = align.process(frames)
+    aligned_depth_frame = aligned_frames.get_depth_frame() 
+    color_frame = aligned_frames.get_color_frame()
+
+    intrinsics = color_frame.profile.as_video_stream_profile().intrinsics
+    print(cam, intrinsics)
+
+    color_image = np.asanyarray(color_frame.get_data())
+    depth_image = np.asanyarray(aligned_depth_frame.get_data())
+
+    pipeline.stop()
+
+    return color_image, depth_image
+
 
 def get_all_camera_images():
     file_dir = 'data'
@@ -95,6 +223,46 @@ def get_joint_traj(keypoint, current_joint_positions):
     return joint_traj
 
 
+def move_robot(client, ee_pose):
+    client.MoveToEndEffectorPose(ee_pose)
+
+def collect_data_during_movement(client, joint_pos, camera_streams, gripper_state, keypoint, data):
+    is_moving = threading.Event()
+    
+    def move_robot():
+        try:
+            is_moving.set()
+            client.MoveToEndEffectorPose(keypoint)
+        finally:
+            is_moving.clear()
+    
+    def collect_data():
+        while is_moving.is_set() or any(not cam.queue.empty() for cam in camera_streams):
+            # Only collect when all cameras have images
+            if all(not cam.queue.empty() for cam in camera_streams):
+                images = {f'cam_{i}': cam.get_images() for i, cam in enumerate(camera_streams)}
+                data_point = {
+                    'gripper_state': gripper_state,
+                    'images': images,
+                    'ee_pose': client.GetEndEffectorPose(),
+                    'keypoint_pose': keypoint,
+                }
+                data.append(data_point)
+            time.sleep(0.001)  # Small sleep to prevent busy waiting
+    
+    # Start threads
+    robot_thread = threading.Thread(target=move_robot)
+    collect_thread = threading.Thread(target=collect_data)
+    
+    robot_thread.start()
+    collect_thread.start()
+    
+    # Wait for completion
+    robot_thread.join()
+    collect_thread.join()
+    
+    return data
+
 @hydra.main(config_path=CONFIG_PATH, config_name="config", version_base="1.3")
 def main(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
@@ -103,6 +271,9 @@ def main(cfg: DictConfig):
     server_ip: str = cfg.server_ip
 
     logger.info(f"Connecting to server {server_ip}:{port}")
+
+    camera = CameraStream()
+    camera.start()
 
     with robot_client_context(server_ip, port, FrankaClient) as client:
         client: FrankaClient
@@ -160,29 +331,36 @@ def main(cfg: DictConfig):
                 gripper_state = -1
             assert gripper_state in [-1, 1], "Gripper state must be -1 or 1"
             
-            current_joint_positions = client.GetJointPositions()
-            # import pdb; pdb.set_trace()
-            joint_traj = get_joint_traj(keypoint, current_joint_positions[:7].tolist())
-            # joint_traj = client.MoveToEndEffectorPose(
-            #     keypoint, return_joint_traj=True)
+            # current_joint_positions = client.GetJointPositions()
+            # # import pdb; pdb.set_trace()
+            # joint_traj = get_joint_traj(keypoint, current_joint_positions[:7].tolist())
+            # assert client.MoveToEndEffectorPose(keypoint)
             
+            # for i, joint_pos in enumerate(joint_traj):
+            #     data.append({
+            #         'gripper_state': gripper_state,
+            #         # somehow get the joint_traj out here for intermediate poses
+            #         'images': get_all_camera_images(),
+            #         'ee_pose': client.GetEndEffectorPose(),
+            #         'keypoint_pose': keypoint,
+            #         'joint_pos': joint_pos
+            #     })
+            #     assert client.MoveToJointPositions(joint_pos)
+            #     print(i)
+            
+            # client.SetGripperAction(gripper_state)
 
-            for i, joint_pos in enumerate(joint_traj):
-                data.append({
-                    'gripper_state': gripper_state,
-                    # somehow get the joint_traj out here for intermediate poses
-                    'images': get_all_camera_images(),
-                    'ee_pose': client.GetEndEffectorPose(),
-                    'keypoint_pose': keypoint,
-                    'joint_pos': joint_pos
-                })
-                assert client.MoveToJointPositions(joint_pos)
-                print(i)
-            
-            client.SetGripperAction(gripper_state)
+            # Collect data during movement
+            data.append(collect_data_during_movement(
+                client=client,
+                camera_streams=[camera],
+                gripper_state=gripper_state,
+                keypoint=keypoint,
+                data=data
+            ))
 
         # save trajectory
-        np.save(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.npy', data)
+        np.savez_compressed(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.npz', data)
             
 
         # import pdb; pdb.set_trace()
