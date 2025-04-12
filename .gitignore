@@ -182,3 +182,6 @@ np
 o3d
 os
 cv2
+data/train
+data/test
+tmp/

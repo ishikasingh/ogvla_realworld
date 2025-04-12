@@ -17,6 +17,11 @@ from arm_hand_deployment.franka.communication.client import FrankaClient
 import cv2
 import open3d as o3d
 import os
+from queue import Queue
+import threading
+import time
+import shutil
+import pickle
 
 from real_world_perception.cameras import *
 from real_world_perception.read_real_data import get_camera_image, get_pointcloud_multiview
@@ -38,7 +43,7 @@ class CameraStream:
     def __init__(self):
         self.cam_serial = RIGHT_CAMERA
         self.is_running = False
-        self.queue = Queue()
+        self.data = []
         self.pipeline = None
         
     def start(self):
@@ -52,6 +57,13 @@ class CameraStream:
         if self.pipeline:
             self.pipeline.stop()
         self.thread.join()
+
+    def get_images(self):
+        if not self.queue.empty():
+            data = self.queue.get()
+            return data
+        else:
+            return None
         
     def _capture_stream(self):
         # Initialize RealSense pipeline
@@ -73,12 +85,24 @@ class CameraStream:
         # Configure camera settings
         color_sensor = pipeline.get_active_profile().get_device().query_sensors()[1]
         color_sensor.set_option(rs.option.exposure, 1000)
+
+        # for _ in range(30):
+        #     frames = pipeline.wait_for_frames()
         
         # Main capture loop
+        if os.path.exists('tmp'):
+            shutil.rmtree('tmp')
+        os.makedirs('tmp', exist_ok=True)
+        self.data= []
         while self.is_running:
-            frames = pipeline.wait_for_frames()
-            aligned_frames = align.process(frames)
-            
+            try:
+                frames = pipeline.wait_for_frames()
+                aligned_frames = align.process(frames)
+            except RuntimeError as e:
+                print(f"[ERROR] Frame alignment failed: {e}")
+                # self.queue = Queue()
+                continue
+
             depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()
             
@@ -88,102 +112,23 @@ class CameraStream:
             # Convert to numpy arrays
             color_image = np.asanyarray(color_frame.get_data())
             depth_image = np.asanyarray(depth_frame.get_data())
+            print("Color Image Shape: ", color_image.shape)
+            print("Depth Image Shape: ", depth_image.shape)
             
             timestamp = time.time()
-            self.queue.put({
+
+            print("Timestamp: ", timestamp)
+
+            cv2.imwrite(f'tmp/color_{timestamp}.png', cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(f'tmp/depth_{timestamp}.png', depth_image)
+            self.data.append({
                 'timestamp': timestamp,
-                'color': color_image,
-                'depth': depth_image
+                # 'color': color_image,
+                # 'depth': depth_image
             })
+            # cv2.imwrite(f'color_{frame_id}.png', cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR))
             
         pipeline.stop()
-
-
-def get_camera_image(cam): # L515 or D435
-    pipeline = rs.pipeline()
-    config = rs.config()
-    config.enable_device(cam)
-
-    pipeline_wrapper = rs.pipeline_wrapper(pipeline)
-    pipeline_profile = config.resolve(pipeline_wrapper)
-    device = pipeline_profile.get_device()
-
-    found_rgb = False
-    for s in device.sensors:
-        print(s.get_info(rs.camera_info.name))
-        if s.get_info(rs.camera_info.name) == 'RGB Camera':
-            found_rgb = True
-            break
-    if not found_rgb:
-        print("The demo requires Depth camera with Color sensor")
-        exit(0)
-        
-    config.enable_stream(rs.stream.depth, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, rs.format.rgb8, 30)
-
-    profile = pipeline.start(config)
-    stream = profile.get_streams()  
-    # for s in stream:
-    #     intr = s.as_video_stream_profile().get_intrinsics()
-    #     print(cam, intr)
-
-    color_sensor = pipeline.get_active_profile().get_device().query_sensors()[1]
-    color_sensor.set_option(rs.option.exposure, 1000)
-
-    depth_sensor = profile.get_device().first_depth_sensor()
-    depth_scale = depth_sensor.get_depth_scale()
-    # print("Depth Scale: ", depth_scale)
-
-    # We will be removing the background of objects more than clipping_distance_in_meters meters away
-    clipping_distance_in_meters = 2 # 2 meter
-    clipping_distance = clipping_distance_in_meters / depth_scale
-
-    align_to = rs.stream.color
-    align = rs.align(align_to)
-
-    for _ in range(30):
-        pipeline.wait_for_frames() 
-
-    frames = pipeline.wait_for_frames()
-    aligned_frames = align.process(frames)
-    aligned_depth_frame = aligned_frames.get_depth_frame() 
-    color_frame = aligned_frames.get_color_frame()
-
-    intrinsics = color_frame.profile.as_video_stream_profile().intrinsics
-    print(cam, intrinsics)
-
-    color_image = np.asanyarray(color_frame.get_data())
-    depth_image = np.asanyarray(aligned_depth_frame.get_data())
-
-    pipeline.stop()
-
-    return color_image, depth_image
-
-
-def get_all_camera_images():
-    file_dir = 'data'
-    scene = 'test'
-    os.makedirs(f'{file_dir}/{scene}', exist_ok=True)
-
-    cams = [RIGHT_CAMERA] #LEFT_CAMERA, 
-    cam_images = []
-    for cam in cams:
-        color, depth = get_camera_image(cam)
-        color = cv2.cvtColor(color, cv2.COLOR_BGR2RGB)
-        cv2.imwrite(f'{file_dir}/{scene}/color_{cam}.png', color)
-        cv2.imwrite(f'{file_dir}/{scene}/depth_{cam}.png', depth)
-        cam_images.append((color, depth))
-    return cam_images
-
-def test_pointcloud_multiview():
-    file_dir = 'data'
-    scene = 'cube'
-    os.makedirs(f'{file_dir}/{scene}', exist_ok=True)
-
-    cams = [LEFT_CAMERA, RIGHT_CAMERA]
-    object_list = ['cube']
-    pcd, _ = get_pointcloud_multiview(cams, object_list, data_path=f'{file_dir}/{scene}', icp=False)
-    o3d.io.write_point_cloud(f'{file_dir}/{scene}/pcd.ply', pcd)
 
 
 def timing_decorator(func):
@@ -223,43 +168,73 @@ def get_joint_traj(keypoint, current_joint_positions):
     return joint_traj
 
 
-def move_robot(client, ee_pose):
-    client.MoveToEndEffectorPose(ee_pose)
-
-def collect_data_during_movement(client, joint_pos, camera_streams, gripper_state, keypoint, data):
+def collect_data_during_movement(client, camera_streams, gripper_state, keypoint, data):
     is_moving = threading.Event()
     
     def move_robot():
         try:
             is_moving.set()
             client.MoveToEndEffectorPose(keypoint)
+            client.SetGripperAction(gripper_state)
         finally:
             is_moving.clear()
     
-    def collect_data():
-        while is_moving.is_set() or any(not cam.queue.empty() for cam in camera_streams):
-            # Only collect when all cameras have images
-            if all(not cam.queue.empty() for cam in camera_streams):
-                images = {f'cam_{i}': cam.get_images() for i, cam in enumerate(camera_streams)}
-                data_point = {
-                    'gripper_state': gripper_state,
-                    'images': images,
-                    'ee_pose': client.GetEndEffectorPose(),
-                    'keypoint_pose': keypoint,
-                }
-                data.append(data_point)
-            time.sleep(0.001)  # Small sleep to prevent busy waiting
+    # def collect_data():
+    #     # camera_streams = [camera_stream.start() for camera_stream in camera_streams]
+    #     while is_moving.is_set() or any(not cam.queue.empty() for cam in camera_streams):
+    #         # Only collect when all cameras have images
+    #         if all(not cam.queue.empty() for cam in camera_streams):
+    #             images = {f'cam_{i}': cam.get_images() for i, cam in enumerate(camera_streams)}
+                
+    #         # time.sleep(0.001)  # Small sleep to prevent busy waiting
+        # get_all_camera_images()
     
+    camera_streams[0].start()
+    time.sleep(1)  # Allow some time for the camera to start
     # Start threads
     robot_thread = threading.Thread(target=move_robot)
-    collect_thread = threading.Thread(target=collect_data)
+    # collect_thread = threading.Thread(target=collect_data)
     
     robot_thread.start()
-    collect_thread.start()
+    # collect_thread.start()
+    print("Robot thread started")
     
     # Wait for completion
     robot_thread.join()
-    collect_thread.join()
+    # collect_thread.join()
+    print("Robot thread finished")
+    time.sleep(1)  
+    camera_streams[0].stop()
+
+    camera_data_list = camera_streams[0].data.copy()
+
+    for i, camera_data in enumerate(camera_data_list):
+        color_image_path = f'tmp/color_{camera_data["timestamp"]}.png'
+        depth_image_path = f'tmp/depth_{camera_data["timestamp"]}.png'
+
+        # import pdb; pdb.set_trace()
+
+
+        if os.path.exists(color_image_path) and os.path.exists(depth_image_path):
+            color_image = cv2.imread(color_image_path)
+            depth_image = cv2.imread(depth_image_path, cv2.IMREAD_UNCHANGED)
+
+            camera_data_list[i].update({
+            'color': color_image,
+            'depth': depth_image
+            })
+        else:
+            camera_data_list = camera_data_list[:i]
+            break
+
+    # import pdb; pdb.set_trace()
+    data_point = {
+                    'gripper_state': gripper_state,
+                    'images': camera_data_list,
+                    'ee_pose': client.GetEndEffectorPose(),
+                    'keypoint_pose': keypoint,
+                }
+    data.append(data_point)
     
     return data
 
@@ -273,7 +248,6 @@ def main(cfg: DictConfig):
     logger.info(f"Connecting to server {server_ip}:{port}")
 
     camera = CameraStream()
-    camera.start()
 
     with robot_client_context(server_ip, port, FrankaClient) as client:
         client: FrankaClient
@@ -292,12 +266,14 @@ def main(cfg: DictConfig):
         assert client.MoveToJointPositions(target_joint_positions)
         assert client.SetGripperAction(-1)
         
-
+        # import pdb; pdb.set_trace()
         # Get task name and episode number from user
-        task_name = input("Enter task name: ").strip()
-        while not task_name:
-            print("Task name cannot be empty")
-            task_name = input("Enter task name: ").strip()
+        # task_name = input("Enter task name: ").strip()
+        # while not task_name:
+        #     print("Task name cannot be empty")
+        #     task_name = input("Enter task name: ").strip()
+
+        task_name = 'stack_cube'
             
         episode_num = input("Enter episode number: ").strip()
         while not episode_num.isdigit():
@@ -351,22 +327,48 @@ def main(cfg: DictConfig):
             # client.SetGripperAction(gripper_state)
 
             # Collect data during movement
-            data.append(collect_data_during_movement(
+
+            data = collect_data_during_movement(
                 client=client,
                 camera_streams=[camera],
                 gripper_state=gripper_state,
                 keypoint=keypoint,
                 data=data
-            ))
+            )
+            # camera.stop()
+
+
 
         # save trajectory
-        np.savez_compressed(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.npz', data)
-            
+        with open(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.pkl', 'wb') as f:
+            pickle.dump(data, f)
+
+        # with open(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.pkl', 'rb') as f:
+        #     data = pickle.load(f)            
 
         # import pdb; pdb.set_trace()
 
 
-        
+        # Create a video writer
+        video_path = f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.mp4'
+        frame_height, frame_width, _ = data[0]['images'][0]['color'].shape
+        fps = 30  # Frames per second
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video_writer = cv2.VideoWriter(video_path, fourcc, fps, (frame_width, frame_height))
+
+        # Write frames to the video
+        for i, frame_data in enumerate(data):
+            for frames in data[i]['images']:
+                if 'color' not in frames.keys():
+                    break
+                color_frame = frames['color']
+                # color_frame = cv2.cvtColor(color_frame, cv2.COLOR_GRAY2BGR)
+                video_writer.write(color_frame)
+                print(f"Writing frame {i + 1}/{len(data)}")
+
+        # Release the video writer
+        video_writer.release()
+        print(f"Video saved to {video_path}")
 
         # @timing_decorator
         # def execute(action):
@@ -403,4 +405,36 @@ def main(cfg: DictConfig):
 
 
 if __name__ == '__main__':
-    main()
+        main()
+
+        # with open(f'/home/yiyang/hsc/ogvla_realworld/data/train/pickup_cube_trajectory_1.pkl', 'rb') as f:
+        #     data = pickle.load(f)            
+
+        # import pdb; pdb.set_trace()
+
+
+        # # Create a video writer
+        # video_path = f'/home/yiyang/hsc/ogvla_realworld/data/train/pickup_cube_depth_trajectory_1.mp4'
+        
+        # frame_height, frame_width, _ = data[0]['images'][0]['color'].shape
+        # fps = 30  # Frames per second
+        # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        # video_writer = cv2.VideoWriter(video_path, fourcc, fps, (frame_width, frame_height))
+
+        # # Write frames to the video
+        # for i, frame_data in enumerate(data):
+        #     for frames in data[i]['images']:
+        #         if 'color' not in frames.keys():
+        #             break
+
+        #         color_frame = frames['depth']
+        #         import pdb; pdb.set_trace()
+        #         # color_frame = cv2.cvtColor(color_frame, cv2.COLOR_RGB2BGR)
+        #         color_frame = cv2.cvtColor(color_frame, cv2.COLOR_GRAY2BGR)
+        #         video_writer.write(color_frame)
+        #         print(f"Writing frame {i + 1}/{len(data)}")
+
+        # # Release the video writer
+        # video_writer.release()
+        # print(f"Video saved to {video_path}")
+    # main()

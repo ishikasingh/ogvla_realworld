@@ -51,7 +51,6 @@ class FrankaClient(Client):
     def MoveToEndEffectorPose(self, pose: Iterable[float], return_joint_traj: Optional[bool] = None) -> bool:
         result = self._stub.MoveToEndEffectorPose(
             service_pb2.Pose(pose=pose, return_joint_traj=return_joint_traj))
-        import pdb; pdb.set_trace()
         if result.HasField("ok"):
             return True
         else:

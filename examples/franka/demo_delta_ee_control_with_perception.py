@@ -21,6 +21,67 @@ import os
 from real_world_perception.cameras import *
 from real_world_perception.read_real_data import get_camera_image, get_pointcloud_multiview
 
+def get_camera_image(cam): # L515 or D435
+    pipeline = rs.pipeline()
+    config = rs.config()
+    config.enable_device(cam)
+
+    pipeline_wrapper = rs.pipeline_wrapper(pipeline)
+    pipeline_profile = config.resolve(pipeline_wrapper)
+    device = pipeline_profile.get_device()
+
+    found_rgb = False
+    for s in device.sensors:
+        print(s.get_info(rs.camera_info.name))
+        if s.get_info(rs.camera_info.name) == 'RGB Camera':
+            found_rgb = True
+            break
+    if not found_rgb:
+        print("The demo requires Depth camera with Color sensor")
+        exit(0)
+        
+    config.enable_stream(rs.stream.depth, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, rs.format.rgb8, 30)
+
+    profile = pipeline.start(config)
+    stream = profile.get_streams()  
+    # for s in stream:
+    #     intr = s.as_video_stream_profile().get_intrinsics()
+    #     print(cam, intr)
+
+    color_sensor = pipeline.get_active_profile().get_device().query_sensors()[1]
+    color_sensor.set_option(rs.option.exposure, 1000)
+
+    depth_sensor = profile.get_device().first_depth_sensor()
+    depth_scale = depth_sensor.get_depth_scale()
+    # print("Depth Scale: ", depth_scale)
+
+    # We will be removing the background of objects more than clipping_distance_in_meters meters away
+    clipping_distance_in_meters = 2 # 2 meter
+    clipping_distance = clipping_distance_in_meters / depth_scale
+
+    align_to = rs.stream.color
+    align = rs.align(align_to)
+
+    for _ in range(30):
+        pipeline.wait_for_frames() 
+
+    frames = pipeline.wait_for_frames()
+    aligned_frames = align.process(frames)
+    aligned_depth_frame = aligned_frames.get_depth_frame() 
+    color_frame = aligned_frames.get_color_frame()
+
+    intrinsics = color_frame.profile.as_video_stream_profile().intrinsics
+    print(cam, intrinsics)
+
+    color_image = np.asanyarray(color_frame.get_data())
+    depth_image = np.asanyarray(aligned_depth_frame.get_data())
+
+    pipeline.stop()
+
+    return color_image, depth_image
+
+
 def get_all_camera_images():
     file_dir = 'data'
     scene = 'test'
