@@ -185,3 +185,4 @@ cv2
 data/train
 data/test
 tmp/
+*.mp4

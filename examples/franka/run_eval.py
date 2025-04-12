@@ -56,7 +56,6 @@ class CameraStream:
         
     def stop(self):
         self.is_running = False
-        self.data = []
         if self.pipeline:
             self.pipeline.stop()
         self.thread.join()
@@ -96,7 +95,7 @@ class CameraStream:
         if os.path.exists('tmp'):
             shutil.rmtree('tmp')
         os.makedirs('tmp', exist_ok=True)
-        self.data= []
+        self.data = []
         while self.is_running:
             try:
                 frames = pipeline.wait_for_frames()
@@ -174,15 +173,18 @@ def get_joint_traj(keypoint, current_joint_positions):
 def run_eval_step(client, camera_streams, data, task_name, episode_num, step):
     is_moving = threading.Event()
     camera_streams[0].start()
-    last_camera_data = []
-    while len(camera_streams[0].data) == 0:
+    time.sleep(5)
+    while len(camera_streams[0].data) < 10:
         continue
+    # time.sleep(1)
     camera_streams[0].stop()
-    last_camera_data = camera_streams[0].data[-1]
+    # import pdb; pdb.set_trace()
+    last_camera_data = camera_streams[0].data[5]
+    
     color_image_path = f'tmp/color_{last_camera_data["timestamp"]}.png'
     depth_image_path = f'tmp/depth_{last_camera_data["timestamp"]}.png'
     obs_input = {
-        'color': cv2.imread(color_image_path),
+        'color': cv2.cvtColor(cv2.imread(color_image_path), cv2.COLOR_BGR2RGB),
         'depth': cv2.imread(depth_image_path, cv2.IMREAD_UNCHANGED),
         'task_name': task_name,
         'episode_num': episode_num,
@@ -209,11 +211,14 @@ def run_eval_step(client, camera_streams, data, task_name, episode_num, step):
     subprocess.run(['git', 'pull', 'origin', 'main'])
 
     action_path = f'/home/yiyang/hsc/ogvla_realworld/data/eval/action'
-    with open(action_path + '.json', 'r') as f:
+    with open(action_path, 'r') as f:
         action_data = json.load(f)
 
+
     keypoint = action_data['keypoint']
-    gripper_state = action_data['gripper_state']
+    gripper_state = action_data['gripper']
+    if gripper_state == 1:
+        gripper_state = -1
 
     def move_robot():
         try:
@@ -234,7 +239,7 @@ def run_eval_step(client, camera_streams, data, task_name, episode_num, step):
         # get_all_camera_images()
     
     camera_streams[0].start()
-    time.sleep(1)  # Allow some time for the camera to start
+    time.sleep(5)  # Allow some time for the camera to start
     # Start threads
     robot_thread = threading.Thread(target=move_robot)
     # collect_thread = threading.Thread(target=collect_data)
@@ -307,6 +312,9 @@ def main(cfg: DictConfig):
             2.30396583422025,
             0.8480939705504309,
         ]
+        # target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
+        #                           -2.44602156,  0.00497657,
+        #                            2.18000674,  0.82309538]
         assert client.MoveToJointPositions(target_joint_positions)
         assert client.SetGripperAction(-1)
         
@@ -318,12 +326,13 @@ def main(cfg: DictConfig):
         #     task_name = input("Enter task name: ").strip()
 
         task_name = 'pickup cube'
+        episode_num = 0
             
-        episode_num = input("Enter episode number: ").strip()
-        while not episode_num.isdigit():
-            print("Episode number must be a positive integer")
-            episode_num = input("Enter episode number: ").strip()
-        episode_num = int(episode_num)
+        # episode_num = input("Enter episode number: ").strip()
+        # while not episode_num.isdigit():
+        #     print("Episode number must be a positive integer")
+        #     episode_num = input("Enter episode number: ").strip()
+        # episode_num = int(episode_num)
 
         # keypoints = []
         # # keypoints.append(client.GetEndEffectorPose())
@@ -345,6 +354,7 @@ def main(cfg: DictConfig):
         # record trajectory
 
         data = []
+        step = 0
         while True:
             # gripper_input = input("Enter gripper state (0: open, 1: closed): ")
             # gripper_state = float(gripper_input.strip())
@@ -376,11 +386,15 @@ def main(cfg: DictConfig):
             data = run_eval_step(
                 client=client,
                 camera_streams=[camera],
-                data=data
+                data=data,
+                task_name=task_name,
+                episode_num=episode_num,
+                step=step
             )
+            step += 1
             success = input("Was the step successful? (y/n): ").strip().lower()
-            if success == 'n':
-                print("Step marked as unsuccessful. Exiting.")
+            if success == 'y':
+                print("Step marked as successful. Exiting.")
                 break
             # camera.stop()
 
