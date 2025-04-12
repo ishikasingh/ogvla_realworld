@@ -326,7 +326,7 @@ def main(cfg: DictConfig):
         #     task_name = input("Enter task name: ").strip()
 
         task_name = 'pickup cube'
-        episode_num = 0
+        episode_num = 1
             
         # episode_num = input("Enter episode number: ").strip()
         # while not episode_num.isdigit():

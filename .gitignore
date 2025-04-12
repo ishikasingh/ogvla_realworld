@@ -186,4 +186,5 @@ data/train
 data/test
 tmp/
 *.mp4
+*trajectory*.pkl
 
