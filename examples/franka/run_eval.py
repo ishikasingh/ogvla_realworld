@@ -312,9 +312,9 @@ def main(cfg: DictConfig):
             2.30396583422025,
             0.8480939705504309,
         ]
-        # target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
-        #                           -2.44602156,  0.00497657,
-        #                            2.18000674,  0.82309538]
+        target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
+                                  -2.44602156,  0.00497657,
+                                   2.18000674,  0.82309538]
         assert client.MoveToJointPositions(target_joint_positions)
         assert client.SetGripperAction(-1)
         
@@ -325,7 +325,7 @@ def main(cfg: DictConfig):
         #     print("Task name cannot be empty")
         #     task_name = input("Enter task name: ").strip()
 
-        task_name = 'pickup cube'
+        task_name = 'pickup the marker'
         episode_num = 1
             
         # episode_num = input("Enter episode number: ").strip()
@@ -392,9 +392,9 @@ def main(cfg: DictConfig):
                 step=step
             )
             step += 1
-            success = input("Was the step successful? (y/n): ").strip().lower()
+            success = input("Is the episode over? (y/n): ").strip().lower()
             if success == 'y':
-                print("Step marked as successful. Exiting.")
+                print("End of episode.")
                 break
             # camera.stop()
 
