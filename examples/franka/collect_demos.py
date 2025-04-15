@@ -263,7 +263,10 @@ def main(cfg: DictConfig):
             2.30396583422025,
             0.8480939705504309,
         ]
-        assert client.MoveToJointPositions(target_joint_positions)
+        # target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
+        #                           -2.44602156,  0.00497657,
+        #                            2.18000674,  0.82309538]
+        # assert client.MoveToJointPositions(target_joint_positions)
         assert client.SetGripperAction(-1)
         
         # import pdb; pdb.set_trace()
@@ -273,7 +276,7 @@ def main(cfg: DictConfig):
         #     print("Task name cannot be empty")
         #     task_name = input("Enter task name: ").strip()
 
-        task_name = 'stack_cube'
+        task_name = 'pickup_cube'
             
         episode_num = input("Enter episode number: ").strip()
         while not episode_num.isdigit():
