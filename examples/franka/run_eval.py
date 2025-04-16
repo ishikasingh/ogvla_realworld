@@ -325,14 +325,14 @@ def main(cfg: DictConfig):
         #     print("Task name cannot be empty")
         #     task_name = input("Enter task name: ").strip()
 
-        task_name = 'pickup the marker'
+        task_name = 'pickup cube'
         episode_num = 1
             
-        # episode_num = input("Enter episode number: ").strip()
-        # while not episode_num.isdigit():
-        #     print("Episode number must be a positive integer")
-        #     episode_num = input("Enter episode number: ").strip()
-        # episode_num = int(episode_num)
+        episode_num = input("Enter episode number: ").strip()
+        while not episode_num.isdigit():
+            print("Episode number must be a positive integer")
+            episode_num = input("Enter episode number: ").strip()
+        episode_num = int(episode_num)
 
         # keypoints = []
         # # keypoints.append(client.GetEndEffectorPose())
