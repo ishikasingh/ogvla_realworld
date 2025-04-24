@@ -283,12 +283,12 @@ def main(cfg: DictConfig):
 
         while True:
 
-            task_name = input("Enter task name: ").strip()
-            while not task_name:
-                print("Task name cannot be empty")
-                task_name = input("Enter task name: ").strip()
+            # task_name = input("Enter task name: ").strip()
+            # while not task_name:
+            #     print("Task name cannot be empty")
+            #     task_name = input("Enter task name: ").strip()
 
-            # task_name = 'pickup orange cube'
+            task_name = 'drop the cube'
                 
             episode_num = input("Enter episode number: ").strip()
             while not episode_num.isdigit():

@@ -220,6 +220,12 @@ def run_eval_step(client, camera_streams, data, task_name, episode_num, step, ro
     if gripper_state == 1:
         gripper_state = -1
 
+    gripper_input = input("Enter gripper state (0: open, 1: closed): ")
+    gripper_state = float(gripper_input.strip())
+    if gripper_state == 0:
+        gripper_state = -1
+    assert gripper_state in [-1, 1], "Gripper state must be -1 or 1"
+
     def move_robot():
         try:
             is_moving.set()
