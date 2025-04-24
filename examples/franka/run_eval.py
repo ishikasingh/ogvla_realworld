@@ -170,7 +170,7 @@ def get_joint_traj(keypoint, current_joint_positions):
     return joint_traj
 
 
-def run_eval_step(client, camera_streams, data, task_name, episode_num, step):
+def run_eval_step(client, camera_streams, data, task_name, episode_num, step, root_dir):
     is_moving = threading.Event()
     camera_streams[0].start()
     time.sleep(5)
@@ -190,7 +190,7 @@ def run_eval_step(client, camera_streams, data, task_name, episode_num, step):
         'episode_num': episode_num,
         'step': step,
     }
-    pickle_file_path = '/home/yiyang/hsc/ogvla_realworld/data/eval/obs_input.pkl'
+    pickle_file_path = root_dir + 'obs_input.pkl'
 
     # Save data to a pickle file
     with open(pickle_file_path, 'wb') as f:
@@ -210,7 +210,7 @@ def run_eval_step(client, camera_streams, data, task_name, episode_num, step):
     
     subprocess.run(['git', 'pull', 'origin', 'main'])
 
-    action_path = f'/home/yiyang/hsc/ogvla_realworld/data/eval/action'
+    action_path = root_dir + 'action'
     with open(action_path, 'r') as f:
         action_data = json.load(f)
 
@@ -317,6 +317,9 @@ def main(cfg: DictConfig):
                                    2.18000674,  0.82309538]
         assert client.MoveToJointPositions(target_joint_positions)
         assert client.SetGripperAction(-1)
+
+        root_dir  = '/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_pvsalm/'
+
         
         # import pdb; pdb.set_trace()
         # Get task name and episode number from user
@@ -389,7 +392,8 @@ def main(cfg: DictConfig):
                 data=data,
                 task_name=task_name,
                 episode_num=episode_num,
-                step=step
+                step=step, 
+                root_dir=root_dir
             )
             step += 1
             success = input("Is the episode over? (y/n): ").strip().lower()
@@ -399,9 +403,8 @@ def main(cfg: DictConfig):
             # camera.stop()
 
 
-
         # save trajectory
-        with open(f'/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_pvsalm/{task_name}_trajectory_{episode_num}.pkl', 'wb') as f:
+        with open(f'{root_dir}{task_name}_trajectory_{episode_num}.pkl', 'wb') as f:
             pickle.dump(data, f)
 
         # with open(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.pkl', 'rb') as f:
@@ -411,7 +414,7 @@ def main(cfg: DictConfig):
 
 
         # Create a video writer
-        video_path = f'/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_pvsalm/{task_name}_trajectory_{episode_num}.mp4'
+        video_path = f'{root_dir}{task_name}_trajectory_{episode_num}.mp4'
         frame_height, frame_width, _ = data[0]['images'][0]['color'].shape
         fps = 30  # Frames per second
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
