@@ -157,7 +157,7 @@ def get_joint_traj(keypoint, current_joint_positions):
 
     # Compute IK to get joint trajectory to the target end-effector pose
     joint_traj, debug_info = ik_wrapper.ik_trajectory_to_target_pose(
-        target_position, target_mat, current_joint_positions, num_points=3
+        target_position, target_mat, current_joint_positions, num_points=30
     )
 
     if joint_traj is None:
