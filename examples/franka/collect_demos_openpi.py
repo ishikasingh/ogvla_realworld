@@ -28,7 +28,7 @@ from real_world_perception.read_real_data import get_camera_image, get_pointclou
 import pyrealsense2 as rs
 
 
-from deoxys.utils.ik_utils import IKWrapper
+# from deoxys.utils.ik_utils import IKWrapper
 
 from arm_hand_deployment.utils.np_3d_utils import (
     quaternion_to_rpy,
