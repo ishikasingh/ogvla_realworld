@@ -320,12 +320,12 @@ def main(cfg: DictConfig):
         
         # import pdb; pdb.set_trace()
         # Get task name and episode number from user
-        # task_name = input("Enter task name: ").strip()
-        # while not task_name:
-        #     print("Task name cannot be empty")
-        #     task_name = input("Enter task name: ").strip()
+        task_name = input("Enter task name: ").strip()
+        while not task_name:
+            print("Task name cannot be empty")
+            task_name = input("Enter task name: ").strip()
 
-        task_name = 'pickup cube'
+        # task_name = 'pickup cube'
         episode_num = 1
             
         episode_num = input("Enter episode number: ").strip()
@@ -401,7 +401,7 @@ def main(cfg: DictConfig):
 
 
         # save trajectory
-        with open(f'/home/yiyang/hsc/ogvla_realworld/data/eval/{task_name}_trajectory_{episode_num}.pkl', 'wb') as f:
+        with open(f'/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_pvsalm/{task_name}_trajectory_{episode_num}.pkl', 'wb') as f:
             pickle.dump(data, f)
 
         # with open(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.pkl', 'rb') as f:
@@ -411,7 +411,7 @@ def main(cfg: DictConfig):
 
 
         # Create a video writer
-        video_path = f'/home/yiyang/hsc/ogvla_realworld/data/eval/{task_name}_trajectory_{episode_num}.mp4'
+        video_path = f'/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_pvsalm/{task_name}_trajectory_{episode_num}.mp4'
         frame_height, frame_width, _ = data[0]['images'][0]['color'].shape
         fps = 30  # Frames per second
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
