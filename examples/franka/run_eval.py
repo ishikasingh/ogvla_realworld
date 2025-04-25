@@ -318,9 +318,9 @@ def main(cfg: DictConfig):
             2.30396583422025,
             0.8480939705504309,
         ]
-        target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
-                                  -2.44602156,  0.00497657,
-                                   2.18000674,  0.82309538]
+        # target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
+        #                           -2.44602156,  0.00497657,
+        #                            2.18000674,  0.82309538]
         assert client.MoveToJointPositions(target_joint_positions)
         assert client.SetGripperAction(-1)
 
