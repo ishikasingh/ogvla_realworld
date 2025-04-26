@@ -322,6 +322,7 @@ def main(cfg: DictConfig):
         #                           -2.44602156,  0.00497657,
         #                            2.18000674,  0.82309538]
         assert client.MoveToJointPositions(target_joint_positions)
+        # time.sleep(2)
         assert client.SetGripperAction(-1)
 
         root_dir  = '/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_pvsalm/'
