@@ -15,20 +15,22 @@ from arm_hand_deployment.utils.client_context import robot_client_context
 from arm_hand_deployment.franka.communication.client import FrankaClient
 
 import cv2
-# import open3d as o3d
+import open3d as o3d
 import os
 from queue import Queue
 import threading
 import time
 import shutil
 import pickle
+import subprocess
+import json
 
 from real_world_perception.cameras import *
 from real_world_perception.read_real_data import get_camera_image, get_pointcloud_multiview
 import pyrealsense2 as rs
 
 
-# from deoxys.utils.ik_utils import IKWrapper
+from deoxys.utils.ik_utils import IKWrapper
 
 from arm_hand_deployment.utils.np_3d_utils import (
     quaternion_to_rpy,
@@ -39,11 +41,8 @@ from arm_hand_deployment.utils.np_3d_utils import (
     quaternion_slerp)
 
 
-
-
 class CameraStream:
-    def __init__(self, client = None):
-        self.client = client
+    def __init__(self):
         self.cam_serial = RIGHT_CAMERA
         self.is_running = False
         self.data = []
@@ -96,7 +95,7 @@ class CameraStream:
         if os.path.exists('tmp'):
             shutil.rmtree('tmp')
         os.makedirs('tmp', exist_ok=True)
-        self.data= []
+        self.data = []
         while self.is_running:
             try:
                 frames = pipeline.wait_for_frames()
@@ -126,7 +125,6 @@ class CameraStream:
             cv2.imwrite(f'tmp/depth_{timestamp}.png', depth_image)
             self.data.append({
                 'timestamp': timestamp,
-                # 'joint_pos': self.client.GetJointPositions(),
                 # 'color': color_image,
                 # 'depth': depth_image
             })
@@ -172,16 +170,70 @@ def get_joint_traj(keypoint, current_joint_positions):
     return joint_traj
 
 
-def collect_data_during_movement(client, camera_streams, gripper_state, keypoint, data):
+def run_eval_step(client, camera_streams, data, task_name, episode_num, step, root_dir):
     is_moving = threading.Event()
-    current_joint_positions = client.GetJointPositions()
-    joint_traj = get_joint_traj(keypoint, current_joint_positions[:7].tolist())
-            
+    camera_streams[0].start()
+    time.sleep(5)
+    while len(camera_streams[0].data) < 10:
+        continue
+    # time.sleep(1)
+    camera_streams[0].stop()
+    # import pdb; pdb.set_trace()
+    last_camera_data = camera_streams[0].data[5]
     
+    color_image_path = f'tmp/color_{last_camera_data["timestamp"]}.png'
+    depth_image_path = f'tmp/depth_{last_camera_data["timestamp"]}.png'
+    obs_input = {
+        'color': cv2.cvtColor(cv2.imread(color_image_path), cv2.COLOR_BGR2RGB),
+        'depth': cv2.imread(depth_image_path, cv2.IMREAD_UNCHANGED),
+        'task_name': task_name,
+        'episode_num': episode_num,
+        'step': step,
+        'state' : client.GetJointPositions(),
+    }
+    pickle_file_path = root_dir + 'obs_input.pkl'
+
+    # Save data to a pickle file
+    with open(pickle_file_path, 'wb') as f:
+        pickle.dump(obs_input, f)
+
+    # Step 2: Add the file to Git
+    subprocess.run(['git', 'add', pickle_file_path])
+
+    # Step 3: Commit the changes
+    commit_message = "Add obs_input pickle file"
+    subprocess.run(['git', 'commit', '-m', commit_message])
+
+    # Step 4: Push the changes to the repository
+    subprocess.run(['git', 'push', 'origin', 'main'])
+
+    input("Press Enter to continue...")
+    
+    subprocess.run(['git', 'pull', 'origin', 'main'])
+
+    action_path = root_dir + 'action'
+    with open(action_path, 'rb') as f:
+        action_chunk = pickle.load(f)
+
+    print('current:', obs_input['state'])
+    print('action:', action_chunk[0])
+
+
+    gripper_input = input("Enter gripper state (0: open, 1: closed): ")
+    gripper_state = float(gripper_input.strip())
+    if gripper_state == 0:
+        gripper_state = -1
+    assert gripper_state in [-1, 1], "Gripper state must be -1 or 1"
+
     def move_robot():
         try:
             is_moving.set()
-            client.MoveToEndEffectorPose(keypoint)
+            for i, action in enumerate(action_chunk):
+                print(action)
+                
+                assert client.MoveToJointPositions(action[:7])
+                
+            # client.MoveToEndEffectorPose(keypoint)
             client.SetGripperAction(gripper_state)
         finally:
             is_moving.clear()
@@ -197,7 +249,7 @@ def collect_data_during_movement(client, camera_streams, gripper_state, keypoint
         # get_all_camera_images()
     
     camera_streams[0].start()
-    time.sleep(1)  # Allow some time for the camera to start
+    time.sleep(5)  # Allow some time for the camera to start
     # Start threads
     robot_thread = threading.Thread(target=move_robot)
     # collect_thread = threading.Thread(target=collect_data)
@@ -239,9 +291,6 @@ def collect_data_during_movement(client, camera_streams, gripper_state, keypoint
                     'gripper_state': gripper_state,
                     'images': camera_data_list,
                     'ee_pose': client.GetEndEffectorPose(),
-                    'joint_pos': client.GetJointPositions(),
-                    'joint_traj': joint_traj,
-                    'keypoint_pose': keypoint
                 }
     data.append(data_point)
     
@@ -256,11 +305,10 @@ def main(cfg: DictConfig):
 
     logger.info(f"Connecting to server {server_ip}:{port}")
 
-    
+    camera = CameraStream()
 
     with robot_client_context(server_ip, port, FrankaClient) as client:
         client: FrankaClient
-        camera = CameraStream(client = client)
 
         # 7 joint positions for the arm + 1 for the gripper (width of the gripper)
         positions = client.GetJointPositions()
@@ -273,136 +321,131 @@ def main(cfg: DictConfig):
             2.30396583422025,
             0.8480939705504309,
         ]
-        # target_jointe0674,  0.82309538]
+        target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
+                                  -2.44602156,  0.00497657,
+                                   2.18000674,  0.82309538]
         # assert client.MoveToJointPositions(target_joint_positions)
-        assert client.SetGripperAction(-1)
-        assert client.MoveToJointPositions(target_joint_positions)
+        # # time.sleep(2)
+        # assert client.SetGripperAction(-1)
+
+        root_dir  = '/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_openpi/'
+
+        if not os.path.exists(root_dir):
+            os.mkdir(root_dir)
 
         
         # import pdb; pdb.set_trace()
         # Get task name and episode number from user
-
-        while True:
-
+        task_name = input("Enter task name: ").strip()
+        while not task_name:
+            print("Task name cannot be empty")
             task_name = input("Enter task name: ").strip()
-            while not task_name:
-                print("Task name cannot be empty")
-                task_name = input("Enter task name: ").strip()
 
-            # task_name = 'pickup orange cube'
-                
-            episode_num = input("Enter episode number: ").strip()
-            while not episode_num.isdigit():
-                print("Episode number must be a positive integer")
-                episode_num = input("Enter episode number: ").strip()
-            episode_num = int(episode_num)
-
-            keypoints = []
-            # keypoints.append(client.GetEndEffectorPose())
-
-            while True:
-                key = input("Press Enter to continue to next frame, or 'q' to quit: ")
-                if key.lower() == 'q':
-                    break
-                keypoints.append(client.GetEndEffectorPose())
+        # task_name = 'pickup cube'
+        episode_num = 1
             
-            # get last keypoint
-            keypoints.append(client.GetEndEffectorPose())
+        episode_num = input("Enter episode number: ").strip()
+        while not episode_num.isdigit():
+            print("Episode number must be a positive integer")
+            episode_num = input("Enter episode number: ").strip()
+        episode_num = int(episode_num)
 
-            # print keypoints
-            print("Keypoints:")
-            for i, keypoint in enumerate(keypoints):
-                print(f"Keypoint {i}: {keypoint}")
+        # keypoints = []
+        # # keypoints.append(client.GetEndEffectorPose())
 
-            # record trajectory
-            data = []
-            gripper_input = input("Enter initial gripper state (0: open, 1: closed): ")
-            gripper_state = float(gripper_input.strip())
-            if gripper_state == 0:
-                gripper_state = -1
-            assert gripper_state in [-1, 1], "Gripper state must be -1 or 1"
+        # while True:
+        #     key = input("Press Enter to continue to next frame, or 'q' to quit: ")
+        #     if key.lower() == 'q':
+        #         break
+        #     keypoints.append(client.GetEndEffectorPose())
+        
+        # # get last keypoint
+        # keypoints.append(client.GetEndEffectorPose())
 
-            data_point = {
-                'gripper_state': gripper_state,
-                # 'images': camera_data_list,
-                'ee_pose': client.GetEndEffectorPose(),
-                'joint_pos': client.GetJointPositions(),
-                # 'keypoint_pose': keypoint,
-            }
-            data.append(data_point)
+        # # print keypoints
+        # print("Keypoints:")
+        # for i, keypoint in enumerate(keypoints):
+        #     print(f"Keypoint {i}: {keypoint}")
 
-            for i, keypoint in enumerate(keypoints):
-                gripper_input = input("Enter next gripper state (0: open, 1: closed): ")
-                gripper_state = float(gripper_input.strip())
-                if gripper_state == 0:
-                    gripper_state = -1
-                assert gripper_state in [-1, 1], "Gripper state must be -1 or 1"
-                
-                # current_joint_positions = client.GetJointPositions()
-                # # import pdb; pdb.set_trace()
-                # joint_traj = get_joint_traj(keypoint, current_joint_positions[:7].tolist())
-                # assert client.MoveToEndEffectorPose(keypoint)
-                
-                # for i, joint_pos in enumerate(joint_traj):
-                #     data.append({
-                #         'gripper_state': gripper_state,
-                #         # somehow get the joint_traj out here for intermediate poses
-                #         'images': get_all_camera_images(),
-                #         'ee_pose': client.GetEndEffectorPose(),
-                #         'keypoint_pose': keypoint,
-                #         'joint_pos': joint_pos
-                #     })
-                #     assert client.MoveToJointPositions(joint_pos)
-                #     print(i)
-                
-                # client.SetGripperAction(gripper_state)
+        # record trajectory
 
-                # Collect data during movement
+        data = []
+        step = 0
+        while True:
+            # gripper_input = input("Enter gripper state (0: open, 1: closed): ")
+            # gripper_state = float(gripper_input.strip())
+            # if gripper_state == 0:
+            #     gripper_state = -1
+            # assert gripper_state in [-1, 1], "Gripper state must be -1 or 1"
+            
+            # current_joint_positions = client.GetJointPositions()
+            # # import pdb; pdb.set_trace()
+            # joint_traj = get_joint_traj(keypoint, current_joint_positions[:7].tolist())
+            # assert client.MoveToEndEffectorPose(keypoint)
+            
+            # for i, joint_pos in enumerate(joint_traj):
+            #     data.append({
+            #         'gripper_state': gripper_state,
+            #         # somehow get the joint_traj out here for intermediate poses
+            #         'images': get_all_camera_images(),
+            #         'ee_pose': client.GetEndEffectorPose(),
+            #         'keypoint_pose': keypoint,
+            #         'joint_pos': joint_pos
+            #     })
+            #     assert client.MoveToJointPositions(joint_pos)
+            #     print(i)
+            
+            # client.SetGripperAction(gripper_state)
 
-                data = collect_data_during_movement(
-                    client=client,
-                    camera_streams=[camera],
-                    gripper_state=gripper_state,
-                    keypoint=keypoint,
-                    data=data
-                )
-                # camera.stop()
+            # Collect data during movement
 
-
-            data_folder = 'train_final'
-            # os.mkdir(f'/home/yiyang/hsc/ogvla_realworld/data/{data_folder}', exist_ok=True)
-            # save trajectory
-            with open(f'/home/yiyang/hsc/Ishika/ogvla_realworld/data/{data_folder}/{task_name}_trajectory_{episode_num}.pkl', 'wb') as f:
-                pickle.dump(data, f)
-
-            # with open(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.pkl', 'rb') as f:
-            #     data = pickle.load(f)            
-
-            # import pdb; pdb.set_trace()
+            data = run_eval_step(
+                client=client,
+                camera_streams=[camera],
+                data=data,
+                task_name=task_name,
+                episode_num=episode_num,
+                step=step, 
+                root_dir=root_dir
+            )
+            step += 1
+            success = input("Is the episode over? (y/n): ").strip().lower()
+            if success == 'y':
+                print("End of episode.")
+                break
+            # camera.stop()
 
 
-            # Create a video writer
-            video_path = f'/home/yiyang/hsc/Ishika/ogvla_realworld/data/{data_folder}/{task_name}_trajectory_{episode_num}.mp4'
-            frame_height, frame_width = 480, 640
-            fps = 30  # Frames per second
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            video_writer = cv2.VideoWriter(video_path, fourcc, fps, (frame_width, frame_height))
+        # save trajectory
+        with open(f'{root_dir}{task_name}_trajectory_{episode_num}.pkl', 'wb') as f:
+            pickle.dump(data, f)
 
-            # Write frames to the video
-            for i, frame_data in enumerate(data):
-                if 'images' not in frame_data.keys():
-                    continue
-                for frames in data[i]['images']:
-                    if 'color' not in frames.keys():
-                        break
-                    color_frame = frames['color']
-                    # color_frame = cv2.cvtColor(color_frame, cv2.COLOR_GRAY2BGR)
-                    video_writer.write(color_frame)
-                    print(f"Writing frame {i + 1}/{len(data)}")
+        # with open(f'/home/yiyang/hsc/ogvla_realworld/data/train/{task_name}_trajectory_{episode_num}.pkl', 'rb') as f:
+        #     data = pickle.load(f)            
 
-            # Release the video writer
-            video_writer.release()
-            print(f"Video saved to {video_path}")
+        # import pdb; pdb.set_trace()
+
+
+        # Create a video writer
+        video_path = f'{root_dir}{task_name}_trajectory_{episode_num}.mp4'
+        frame_height, frame_width, _ = data[0]['images'][0]['color'].shape
+        fps = 30  # Frames per second
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video_writer = cv2.VideoWriter(video_path, fourcc, fps, (frame_width, frame_height))
+
+        # Write frames to the video
+        for i, frame_data in enumerate(data):
+            for frames in data[i]['images']:
+                if 'color' not in frames.keys():
+                    break
+                color_frame = frames['color']
+                # color_frame = cv2.cvtColor(color_frame, cv2.COLOR_GRAY2BGR)
+                video_writer.write(color_frame)
+                print(f"Writing frame {i + 1}/{len(data)}")
+
+        # Release the video writer
+        video_writer.release()
+        print(f"Video saved to {video_path}")
 
         # @timing_decorator
         # def execute(action):
@@ -440,7 +483,8 @@ def main(cfg: DictConfig):
 
 if __name__ == '__main__':
         main()
-        # with open(f'/home/yiyang/hsc/ogvla_realworld/data/train_vpsalm_skills/unstack yellow from green_trajectory_6.pkl', 'rb') as f:
+
+        # with open(f'/home/yiyang/hsc/ogvla_realworld/data/train/pickup_cube_trajectory_1.pkl', 'rb') as f:
         #     data = pickle.load(f)            
 
         # import pdb; pdb.set_trace()

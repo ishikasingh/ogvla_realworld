@@ -220,6 +220,8 @@ def run_eval_step(client, camera_streams, data, task_name, episode_num, step, ro
     if gripper_state == 1:
         gripper_state = -1
 
+    print(f"gripper state: {gripper_state}")
+
     gripper_input = input("Enter gripper state (0: open, 1: closed): ")
     gripper_state = float(gripper_input.strip())
     if gripper_state == 0:
@@ -318,14 +320,18 @@ def main(cfg: DictConfig):
             2.30396583422025,
             0.8480939705504309,
         ]
-        # target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
-        #                           -2.44602156,  0.00497657,
-        #                            2.18000674,  0.82309538]
+        target_joint_positions = [-0.06598721, -0.45858291,  0.07823665, 
+                                  -2.44602156,  0.00497657,
+                                   2.18000674,  0.82309538]
         assert client.MoveToJointPositions(target_joint_positions)
-        # time.sleep(2)
+        # # time.sleep(2)
+        # assert client.SetGripperAction(1)
         assert client.SetGripperAction(-1)
 
-        root_dir  = '/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_pvsalm/'
+        root_dir  = '/home/yiyang/hsc/Ishika/ogvla_realworld/data/eval_final_vpsalm/'
+
+        if not os.path.exists(root_dir):
+            os.mkdir(root_dir)
 
         
         # import pdb; pdb.set_trace()
